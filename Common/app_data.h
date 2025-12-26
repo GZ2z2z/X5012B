@@ -41,12 +41,10 @@ typedef struct {
 } RuntimeData_t;
 
 typedef struct {
-    uint32_t error_count;    // 通讯错误计数 (Ready 不来)
-    uint32_t stuck_count;    // 溢出计数 (0x7FFFFF)
-    
-    // [新增] 
-    int32_t  last_val;       // 上一次读到的值
-    uint32_t freeze_count;   // 数值冻结(不变)计数
+    uint32_t error_count;
+    uint32_t stuck_count;
+    int32_t  last_val;
+    uint32_t freeze_count;
 } ADC_Health_t;
 
 // 定义错误阈值 (比如连续 100ms 都不正常，就复位它)

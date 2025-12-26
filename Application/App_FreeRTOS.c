@@ -85,19 +85,18 @@ void Task_ADC_Verify(void *param)
 {
     // 1. 等待网络稳定
     vTaskDelay(pdMS_TO_TICKS(3000));
-    debug_printf("\r\n=== ADC 800Hz Data View ===\r\n");
+    debug_printf("\r\n=== ADC 800Hz Data View (With Auto-Recovery) ===\r\n");
 
-    // 2. 初始化 (这步已经验证过了，保持不变)
+    // 2. 初始化
     CS5530_Init_All();
 
     // 3. 启动连续转换
     CS5530_Start_Continuous();
 
     // 4. 进入主循环
-    int32_t adc_buffer[12];
+    int32_t adc_buffer[12] = {0};
     uint8_t ready_flags[12];
     uint32_t print_timer = 0;
-
     uint32_t print_threshold = 500;
 
     TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -106,43 +105,63 @@ void Task_ADC_Verify(void *param)
     {
         for(int i=0; i<12; i++) {
             
+            // ============================================================
+            // [新增] 0. 冷却期检查
+            // 如果刚复位过，暂时不要去骚扰它，给 SPI 总线一点喘息时间
+            // ============================================================
+            // if (AdcHealth[i].cooldown_timer > 0) {
+            //     AdcHealth[i].cooldown_timer--;
+            //     adc_buffer[i] = 0; // 冷却期间显示 0 (或者 -999 以示区别)
+            //     continue; // 直接跳过本次循环，不读数据，不触发复位
+            // }
+
             // 1. 读取数据
             int32_t temp_val = CS5530_Read_Data(i, &ready_flags[i]);
             
-            
             if(ready_flags[i] == 1) {
-                // === 读到数据了 ===
+                // === 读到数据了 (Ready有效) ===
                 
-                // [新增] 冻结检测逻辑
-                if (temp_val == AdcHealth[i].last_val) {
-                    // 如果数值和上次一模一样，嫌疑增加
-                    // (24位ADC如果不动，说明芯片内部逻辑锁死了)
-                    AdcHealth[i].freeze_count++;
-                } else {
-                    // 数值变了，说明是活的
-                    AdcHealth[i].freeze_count = 0;
-                    AdcHealth[i].last_val = temp_val; // 更新记录
+                // ============================================================
+                // [新增] 1. 黑名单检测 (0 和 65280)
+                // 0      = MISO 死锁低电平
+                // 65280  = 0x00FF00，典型线路干扰或虚接值
+                // ============================================================
+                if (temp_val == 0 || temp_val == 65280) {
+                     AdcHealth[i].error_count++; // 视为错误累加
+                } 
+                else {
+                     // === 数据看起来是合法的 ===
+                     AdcHealth[i].error_count = 0; // 清除错误计数
+                     
+                     // 2. 冻结检测 (Freeze Check)
+                     // 如果数据和上次完全一样，说明芯片内部逻辑可能锁死
+                     if (temp_val == AdcHealth[i].last_val) {
+                         AdcHealth[i].freeze_count++;
+                     } else {
+                         AdcHealth[i].freeze_count = 0;
+                         AdcHealth[i].last_val = temp_val; // 更新记录
+                     }
+                     
+                     // 3. 溢出检测 (Stuck Check)
+                     // 检测是否卡在最大/最小量程
+                     if (temp_val == 8388607 || temp_val == -8388608) {
+                          AdcHealth[i].stuck_count++;
+                     } else {
+                          AdcHealth[i].stuck_count = 0;
+                     }
+
+                     // 更新显示缓冲区
+                     adc_buffer[i] = temp_val;
                 }
 
-                // 正常更新 buffer
-                adc_buffer[i] = temp_val;
-                AdcHealth[i].error_count = 0; // 清除通讯错误
-
-                // 溢出检测 (可选，依然保留)
-                if (temp_val == 8388607 || temp_val == -8388608) {
-                     AdcHealth[i].stuck_count++;
-                } else {
-                     AdcHealth[i].stuck_count = 0;
-                }
-                
             } else {
-                // === 没读到数据 (超时) ===
+                // === 没读到数据 (Ready 高电平超时) ===
                 AdcHealth[i].error_count++;
             }
             
             // ============================================================
             // [终极救护逻辑] 触发条件：
-            // 1. 通讯超时 > 50次 (50ms)
+            // 1. 通讯超时/黑名单值 > 50次 (50ms)
             // 2. 数值冻结 > 50次 (50ms 数据完全没变)
             // 3. 数值溢出 > 100次 (插拔瞬间可能短暂溢出，稍微宽容点)
             // ============================================================
@@ -150,28 +169,36 @@ void Task_ADC_Verify(void *param)
                 AdcHealth[i].freeze_count > 50 || 
                 AdcHealth[i].stuck_count > 100) 
             {
-                // 既然死了，就显示 0，方便观察
+                // 既然判定死了，就显示 0，方便观察
                 adc_buffer[i] = 0;
                 
+                // 打印调试信息 (可选)
+                // debug_printf("Recovering CH%d (Err:%d Frz:%d)...\r\n", i, AdcHealth[i].error_count, AdcHealth[i].freeze_count);
+
                 // 执行暴力复位
                 ADC_Recover_Channel(i);
                 
-                // 清零所有计数器，给它复活的机会
+                // 清零所有计数器
                 AdcHealth[i].error_count = 0;
                 AdcHealth[i].freeze_count = 0;
                 AdcHealth[i].stuck_count = 0;
-                // 让 last_val 设为一个不可能的值，防止复活后误判
-                AdcHealth[i].last_val = 0x55AAAA55; 
+                AdcHealth[i].last_val = 0x55AAAA55; // 设个乱码防止误判冻结
+                
+                // [新增] 设置冷却时间 (例如 2000ms)
+                // 复位后如果还没好，让它休息 2秒 再试，防止 SPI 总线被复位命令占满
+                // AdcHealth[i].cooldown_timer = 2000; 
             }
         }
 
+        // ============================================================
+        // 打印逻辑
+        // ============================================================
         print_timer++;
         if (print_timer >= print_threshold) // 500ms 打印一次
         {
             print_timer = 0;
             debug_printf("\r\n--- ADC Data Snapshot ---\r\n");
 
-            // 打印 Raw Code
             debug_printf("Raw[0-5]:  %ld  %ld  %ld  %ld  %ld  %ld\r\n",
                          adc_buffer[0], adc_buffer[1], adc_buffer[2],
                          adc_buffer[3], adc_buffer[4], adc_buffer[5]);
@@ -181,7 +208,7 @@ void Task_ADC_Verify(void *param)
                          adc_buffer[9], adc_buffer[10], adc_buffer[11]);
         }
 
-        // 维持 1ms 轮询，保证不丢数据 (过采样)
+        // 维持 1ms 轮询
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(1));
     }
 }

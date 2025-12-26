@@ -206,7 +206,7 @@ int32_t CS5530_Read_Data(uint8_t ch_index, uint8_t *new_data_flag) {
     CS5530_Deselect(ch_index);
     return result;
 }
-// 重启指定通道的 ADC (救活死去的芯片)
+// 重启指定通道的 ADC 
 void ADC_Recover_Channel(uint8_t ch) {
     // 1. 选中芯片
     CS5530_Select(ch); 
@@ -217,16 +217,13 @@ void ADC_Recover_Channel(uint8_t ch) {
     
     // 3. 取消选中
     CS5530_Deselect(ch);
-    
-    // [优化] 让出 CPU 2ms，让芯片复位，同时允许 Task_Network 运行
-    // vTaskDelay(pdMS_TO_TICKS(2));
+
     Soft_Delay(2000);
 
     // 4. 重新配置 (0x00085000)
     CS5530_Write_Config(ch, 0x00085000); 
-    
-    // [优化] 让出 CPU 2ms，等待配置生效
-    vTaskDelay(pdMS_TO_TICKS(2)); 
+
+    Soft_Delay(2000);
     
     // 5. 重新启动转换
     CS5530_Select(ch);
