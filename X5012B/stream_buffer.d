@@ -1,0 +1,14 @@
+x5012b\stream_buffer.o: freeRTOS\stream_buffer.c
+x5012b\stream_buffer.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+x5012b\stream_buffer.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+x5012b\stream_buffer.o: ./freeRTOS/include/FreeRTOS.h
+x5012b\stream_buffer.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+x5012b\stream_buffer.o: ./freeRTOS/FreeRTOSConfig.h
+x5012b\stream_buffer.o: ./freeRTOS/include/projdefs.h
+x5012b\stream_buffer.o: ./freeRTOS/include/portable.h
+x5012b\stream_buffer.o: ./freeRTOS/include/deprecated_definitions.h
+x5012b\stream_buffer.o: ./freeRTOS/portable/portmacro.h
+x5012b\stream_buffer.o: ./freeRTOS/include/mpu_wrappers.h
+x5012b\stream_buffer.o: ./freeRTOS/include/task.h
+x5012b\stream_buffer.o: ./freeRTOS/include/list.h
+x5012b\stream_buffer.o: ./freeRTOS/include/stream_buffer.h

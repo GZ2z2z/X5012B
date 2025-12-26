@@ -1,0 +1,16 @@
+x5012b\tasks.o: freeRTOS\tasks.c
+x5012b\tasks.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+x5012b\tasks.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+x5012b\tasks.o: ./freeRTOS/include/FreeRTOS.h
+x5012b\tasks.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+x5012b\tasks.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+x5012b\tasks.o: ./freeRTOS/FreeRTOSConfig.h
+x5012b\tasks.o: ./freeRTOS/include/projdefs.h
+x5012b\tasks.o: ./freeRTOS/include/portable.h
+x5012b\tasks.o: ./freeRTOS/include/deprecated_definitions.h
+x5012b\tasks.o: ./freeRTOS/portable/portmacro.h
+x5012b\tasks.o: ./freeRTOS/include/mpu_wrappers.h
+x5012b\tasks.o: ./freeRTOS/include/task.h
+x5012b\tasks.o: ./freeRTOS/include/list.h
+x5012b\tasks.o: ./freeRTOS/include/timers.h
+x5012b\tasks.o: ./freeRTOS/include/stack_macros.h

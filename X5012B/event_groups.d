@@ -1,0 +1,15 @@
+x5012b\event_groups.o: freeRTOS\event_groups.c
+x5012b\event_groups.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+x5012b\event_groups.o: ./freeRTOS/include/FreeRTOS.h
+x5012b\event_groups.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+x5012b\event_groups.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+x5012b\event_groups.o: ./freeRTOS/FreeRTOSConfig.h
+x5012b\event_groups.o: ./freeRTOS/include/projdefs.h
+x5012b\event_groups.o: ./freeRTOS/include/portable.h
+x5012b\event_groups.o: ./freeRTOS/include/deprecated_definitions.h
+x5012b\event_groups.o: ./freeRTOS/portable/portmacro.h
+x5012b\event_groups.o: ./freeRTOS/include/mpu_wrappers.h
+x5012b\event_groups.o: ./freeRTOS/include/task.h
+x5012b\event_groups.o: ./freeRTOS/include/list.h
+x5012b\event_groups.o: ./freeRTOS/include/timers.h
+x5012b\event_groups.o: ./freeRTOS/include/event_groups.h

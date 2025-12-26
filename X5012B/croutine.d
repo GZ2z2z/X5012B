@@ -1,0 +1,13 @@
+x5012b\croutine.o: freeRTOS\croutine.c
+x5012b\croutine.o: ./freeRTOS/include/FreeRTOS.h
+x5012b\croutine.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+x5012b\croutine.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+x5012b\croutine.o: ./freeRTOS/FreeRTOSConfig.h
+x5012b\croutine.o: ./freeRTOS/include/projdefs.h
+x5012b\croutine.o: ./freeRTOS/include/portable.h
+x5012b\croutine.o: ./freeRTOS/include/deprecated_definitions.h
+x5012b\croutine.o: ./freeRTOS/portable/portmacro.h
+x5012b\croutine.o: ./freeRTOS/include/mpu_wrappers.h
+x5012b\croutine.o: ./freeRTOS/include/task.h
+x5012b\croutine.o: ./freeRTOS/include/list.h
+x5012b\croutine.o: ./freeRTOS/include/croutine.h

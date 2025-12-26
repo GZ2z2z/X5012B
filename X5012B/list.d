@@ -1,0 +1,12 @@
+x5012b\list.o: freeRTOS\list.c
+x5012b\list.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+x5012b\list.o: ./freeRTOS/include/FreeRTOS.h
+x5012b\list.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+x5012b\list.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+x5012b\list.o: ./freeRTOS/FreeRTOSConfig.h
+x5012b\list.o: ./freeRTOS/include/projdefs.h
+x5012b\list.o: ./freeRTOS/include/portable.h
+x5012b\list.o: ./freeRTOS/include/deprecated_definitions.h
+x5012b\list.o: ./freeRTOS/portable/portmacro.h
+x5012b\list.o: ./freeRTOS/include/mpu_wrappers.h
+x5012b\list.o: ./freeRTOS/include/list.h
