@@ -12,7 +12,7 @@ TaskHandle_t TASK_ADC_VERIFY_handle;
 // Modbus核心协议栈任务
 void Task_Modbus_TCP(void *param);
 #define TASK_MODBUS_STACK_SIZE 512
-#define TASK_MODBUS_PRIORITY (tskIDLE_PRIORITY + 2)
+#define TASK_MODBUS_PRIORITY (tskIDLE_PRIORITY + 3)
 TaskHandle_t TASK_MODBUS_handle;
 
 // W5500 Socket管理任务
@@ -23,7 +23,7 @@ TaskHandle_t TASK_W5500_handle;
 
 void Task_LED_Entry(void *param);
 #define TASK_LED_STACK_SIZE 128
-#define TASK_LED_PRIORITY (tskIDLE_PRIORITY + 1)
+#define TASK_LED_PRIORITY (tskIDLE_PRIORITY + 2)
 TaskHandle_t TASK_LED_handle;
 
 int32_t g_adc_buffer[12] = {0};
@@ -85,7 +85,6 @@ void App_freeRTOS_Start(void)
 //     }
 // }
 
-
 void Task_Modbus_TCP(void *param)
 {
     eMBErrorCode eStatus;
@@ -114,6 +113,25 @@ void Task_Modbus_TCP(void *param)
     }
 }
 
+static void Restore_Network_Defaults(void)
+{
+    // 1. 生成默认参数
+    wiz_NetInfo default_net = {
+        .ip = {192, 168, 0, 234}, // 你的默认IP
+        .sn = {255, 255, 255, 0},
+        .gw = {192, 168, 0, 1},
+        .dhcp = NETINFO_STATIC};
+    uint16_t default_port = 502;
+
+    // 2. 写入 EEPROM
+    NetConfig_SaveParams(default_net.ip, default_net.sn, default_net.gw, default_port);
+
+    // 3. 触发热重载
+    g_apply_net_change_flag = true;
+
+    // debug_printf("!! Network Reset to Defaults !!\r\n");
+}
+
 void Task_W5500_Manager(void *param)
 {
     extern volatile bool g_apply_net_change_flag;
@@ -123,14 +141,46 @@ void Task_W5500_Manager(void *param)
 
     static uint32_t disconnect_start_tick = 0;
 
-
+    static uint32_t cfg_btn_press_start = 0;
+    static bool cfg_btn_processed = false;
     Int_ETH_Init(); // 只在上电/重启时做一次初始化
 
     g_system_state = SYS_STATE_RUNNING_NO_COMM;
 
     for (;;)
     {
-        /* —— 网参热切换：只在收到 0xA55A 后执行 —— */
+        // === CFG 按键长按检测 ===
+        if (HAL_GPIO_ReadPin(CFG_GPIO_Port, CFG_Pin) == GPIO_PIN_RESET)
+        {
+            if (cfg_btn_press_start == 0)
+            {
+                cfg_btn_press_start = HAL_GetTick();
+            }
+            else
+            {
+                // 长按超过 1000ms
+                if ((HAL_GetTick() - cfg_btn_press_start > 1000) && !cfg_btn_processed)
+                {
+                    // 1. 切换 LED 状态为快闪，提示用户“已触发复位”
+                    g_system_state = SYS_STATE_NET_RESET;
+
+                    // 2. 阻塞延时 1.5秒，让 LED 闪烁
+                    vTaskDelay(pdMS_TO_TICKS(1500));
+
+                    // 3. 执行真正的复位操作
+                    Restore_Network_Defaults();
+
+                    // 4. 标记已处理
+                    cfg_btn_processed = true;
+                }
+            }
+        }
+        else
+        {
+            // 按键抬起
+            cfg_btn_press_start = 0;
+            cfg_btn_processed = false;
+        }
         if (g_apply_net_change_flag)
         {
             g_apply_net_change_flag = false;
@@ -158,7 +208,7 @@ void Task_W5500_Manager(void *param)
                     disconnect_start_tick = xTaskGetTickCount();
                 }
 
-                if ((xTaskGetTickCount() - disconnect_start_tick) > pdMS_TO_TICKS(2000))
+                if ((xTaskGetTickCount() - disconnect_start_tick) > pdMS_TO_TICKS(1000))
                 {
                     if (g_system_state != SYS_STATE_INIT_ERROR)
                     {
@@ -268,7 +318,7 @@ ADC_Health_t AdcHealth[12] = {0};
 void Task_ADC_Verify(void *param)
 {
     // 1. 等待网络稳定
-    // vTaskDelay(pdMS_TO_TICKS(3000));
+    vTaskDelay(pdMS_TO_TICKS(500));
     // debug_printf("\r\n=== ADC 800Hz Data View (With Auto-Recovery) ===\r\n");
 
     // 2. 初始化
@@ -276,7 +326,6 @@ void Task_ADC_Verify(void *param)
 
     // 3. 启动连续转换
     CS5530_Start_Continuous();
-
 
     uint8_t ready_flags[12];
     // uint32_t print_timer = 0;
@@ -286,73 +335,29 @@ void Task_ADC_Verify(void *param)
 
     while (1)
     {
+        if (g_system_state != SYS_STATE_COMM_ESTABLISHED)
+        {
+            // 如果没连接，就让任务睡 200ms，让出 CPU
+            vTaskDelay(pdMS_TO_TICKS(200));
+
+            // 关键：重置时间基准
+            // 否则当你一旦连上，vTaskDelayUntil 会为了“追赶”之前的时间而瞬间执行很多次
+            xLastWakeTime = xTaskGetTickCount();
+            continue; // 跳过本次循环，不执行下面的采样
+        }
         for (int i = 0; i < 12; i++)
         {
-
-            // 1. 读取数据
+            // 这里的采样逻辑保持你之前修改后的 (使用 CS5530_Read_Data_Optimized)
             int32_t temp_val = CS5530_Read_Data(i, &ready_flags[i]);
 
             if (ready_flags[i] == 1)
             {
-                // === 读到数据了 (Ready有效) ===
-
-                if (temp_val == 0 || temp_val == 65280)
-                {
-                    AdcHealth[i].error_count++; // 视为错误累加
-                }
-                else
-                {
-                    // === 数据看起来是合法的 ===
-                    AdcHealth[i].error_count = 0; // 清除错误计数
-
-                    // 2. 冻结检测 (Freeze Check)
-                    // 如果数据和上次完全一样，说明芯片内部逻辑可能锁死
-                    if (temp_val == AdcHealth[i].last_val)
-                    {
-                        AdcHealth[i].freeze_count++;
-                    }
-                    else
-                    {
-                        AdcHealth[i].freeze_count = 0;
-                        AdcHealth[i].last_val = temp_val; // 更新记录
-                    }
-
-                    // 3. 溢出检测 (Stuck Check)
-                    // 检测是否卡在最大/最小量程
-                    if (temp_val == 8388607 || temp_val == -8388608)
-                    {
-                        AdcHealth[i].stuck_count++;
-                    }
-                    else
-                    {
-                        AdcHealth[i].stuck_count = 0;
-                    }
-
-                    // 更新显示缓冲区
-                    g_adc_buffer[i] = temp_val;
-                }
+                g_adc_buffer[i] = temp_val;
+                AdcHealth[i].error_count = 0; // 读到数据就清零错误计数
             }
             else
             {
-                // === 没读到数据 (Ready 高电平超时) ===
-                AdcHealth[i].error_count++;
-            }
-
-            if (AdcHealth[i].error_count > 50 ||
-                AdcHealth[i].freeze_count > 50 ||
-                AdcHealth[i].stuck_count > 100)
-            {
-                // 既然判定死了，就显示 0，方便观察
-                g_adc_buffer[i] = 0;
-
-                // 执行暴力复位
-                ADC_Recover_Channel(i);
-
-                // 清零所有计数器
-                AdcHealth[i].error_count = 0;
-                AdcHealth[i].freeze_count = 0;
-                AdcHealth[i].stuck_count = 0;
-                AdcHealth[i].last_val = 0x55AAAA55; // 设个乱码防止误判冻结
+                // 没读到数据 (超时)，不做处理，或者仅做简单统计
             }
         }
 

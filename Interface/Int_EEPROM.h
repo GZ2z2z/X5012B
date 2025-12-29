@@ -37,5 +37,7 @@
 uint8_t ee_CheckOk(void);
 uint8_t ee_ReadBytes(uint8_t *_pReadBuf, uint16_t _usAddress, uint16_t _usSize);
 uint8_t ee_WriteBytes(uint8_t *_pWriteBuf, uint16_t _usAddress, uint16_t _usSize);
-
+void Int_EEPROM_Init(void);
+uint8_t Int_EEPROM_ReadBuffer(uint16_t addr, uint8_t *buffer, uint16_t length);
+uint8_t Int_EEPROM_WriteBuffer(uint16_t addr, uint8_t *buffer, uint16_t length);
 #endif

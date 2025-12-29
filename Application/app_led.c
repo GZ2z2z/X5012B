@@ -17,6 +17,8 @@ static void LED_Set(uint8_t r_on, uint8_t g_on)
     HAL_GPIO_WritePin(LED_ST_GPIO_Port, LED_ST_Pin, g_on ? GPIO_PIN_RESET : GPIO_PIN_SET);
 }
 
+// 文件：app_led.c
+
 void Task_LED_Entry(void *param)
 {
     // 上电初期稍微延时
@@ -27,31 +29,42 @@ void Task_LED_Entry(void *param)
         switch(g_system_state)
         {
             case SYS_STATE_INIT_ERROR:
-                // 红灯常亮，绿灯灭
+                // 初始化错误：红灯常亮 (绿灯灭)
                 LED_Set(1, 0);
                 vTaskDelay(pdMS_TO_TICKS(200)); 
                 break;
 
             case SYS_STATE_RUNNING_NO_COMM:
-                // 红绿交替闪烁 1Hz (周期1000ms -> 红500ms, 绿500ms)
+                // 正常运行，无连接：
+                // 绿灯常亮 (表示系统在跑)
+                // 红灯不亮 (表示没连接)
+                LED_Set(0, 1); 
                 
-                // 红亮 绿灭
-                LED_Set(1, 0);
-                vTaskDelay(pdMS_TO_TICKS(500));
-                
-                // 状态检查：如果状态变了，立即切出去，增加响应速度
-                if(g_system_state != SYS_STATE_RUNNING_NO_COMM) break;
-
-                // 红灭 绿亮
-                LED_Set(0, 1);
-                vTaskDelay(pdMS_TO_TICKS(500));
+                // 延时释放 CPU，虽然是常亮，但也需要循环检测状态变化
+                vTaskDelay(pdMS_TO_TICKS(200));
                 break;
 
             case SYS_STATE_COMM_ESTABLISHED:
-
-                // 红灭 绿亮
-                LED_Set(0, 1);
+                // Modbus 已连接：
+                // 绿灯常亮 (系统还在跑)
+                // 红灯常亮 (连接已建立)
+                LED_Set(1, 1); 
+                
                 vTaskDelay(pdMS_TO_TICKS(200));
+                break;
+
+            case SYS_STATE_NET_RESET:
+                // 网络复位中：保持红灯快闪逻辑
+                // 红亮 绿灭
+                LED_Set(1, 0);
+                vTaskDelay(pdMS_TO_TICKS(100));
+                
+                // 提高响应速度
+                if(g_system_state != SYS_STATE_NET_RESET) break;
+
+                // 全灭
+                LED_Set(0, 0);
+                vTaskDelay(pdMS_TO_TICKS(100));
                 break;
 
             default:

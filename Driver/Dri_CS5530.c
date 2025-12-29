@@ -1,13 +1,10 @@
 #include "Dri_CS5530.h"
 #include "spi.h"
-#include "Com_Util.h" // 借用你的延时函数
 
 // 外部 SPI 句柄引用
 extern SPI_HandleTypeDef hspi3;
+#define READ_TIMEOUT_LIMIT  5000
 
-// ============================================================
-// 1. 硬件引脚映射 (根据你的描述 PD0-PD4, PD7-PD13)
-// ============================================================
 typedef struct {
     GPIO_TypeDef* port;
     uint16_t pin;
@@ -85,7 +82,7 @@ void CS5530_Reset_Serial(void) {
     debug_printf("\r\n  > Reset Serial Done.\r\n");
 }
 // ==========================================
-// 修改后的初始化函数 (Dri_CS5530.c)
+// 修改后的初始化函数 
 // ==========================================
 
 // 写入配置寄存器
@@ -117,44 +114,55 @@ static uint32_t CS5530_Read_Config(uint8_t ch_idx) {
     return read_val;
 }
 
-void CS5530_Init_All(void) {
+#define CYCLES_PER_MS  40000 
+
+static void Delay_ms(uint32_t ms) {
+    // 简单粗暴，永不卡死
+    Soft_Delay(ms * CYCLES_PER_MS);
+}
+
+void CS5530_Init_All(void) 
+{
     debug_printf("  > [INIT] Start Sequence...\r\n");
-    
-    // 1. 复位串口
-    CS5530_Reset_Serial();
-    Soft_Delay(10000);
 
-    // 2. 计算 800Hz 配置字
-    // RS=0 (System Run)
-    // VRS=0 (假设使用 5V 或者是默认 2.5V<VREF<=VA+，如果用 2.5V Ref 且效果不好，可尝试设为 1)
-    // FRS=1 (Bit 19, Scale rates by 5/6)
-    // WR = 1010 (Bit 14-11, 800Hz @ FRS=1)
-    // Val = (1 << 19) | (0xA << 11) = 0x00080000 | 0x00005000 = 0x00085000
-    uint32_t config_val = 0x00085000;
+    // 1. 上电等待：给芯片一点时间让晶振起振
+    Delay_ms(100);
 
-    // 3. 自检 (验证通讯是否正常)
-    debug_printf("  > [TEST] Writing Config to CH0: 0x%08X\r\n", config_val);
-    CS5530_Write_Config(0, config_val);
-    Soft_Delay(5000);
-    
-    uint32_t read_back = CS5530_Read_Config(0);
-    debug_printf("  > [TEST] Read Back from CH0:  0x%08X\r\n", read_back);
-    
-    // 忽略 Bit 28 (RV) 进行比较
-    if ((read_back & 0xEFFFFFFF) == (config_val & 0xEFFFFFFF)) {
-        debug_printf("  > [PASS] SPI Comm Success! Configured for 800Hz.\r\n");
-    } else {
-        debug_printf("  > [FAIL] Read mismatch! Check SPI settings.\r\n");
+    for (int i = 0; i < CS5530_COUNT; i++) 
+    {
+        // === 第一步：串口复位 (Serial Port Initialization) ===
+        // 发送 15 个 0xFF 和 1 个 0xFE
+        // 作用：无论芯片当前在干什么（比如正在连续转换），
+        // 这个序列都能让它退回到等待命令的状态。
+        CS5530_Select(i);
+        for (int k = 0; k < 15; k++) SPI_Exchange(0xFF);
+        SPI_Exchange(0xFE);
+        CS5530_Deselect(i);
+        
+        // 稍微等一下让它反应过来
+        Delay_ms(10); 
+
+        // === 第二步：系统复位 (System Reset via RS bit) ===
+        // 这一步是你之前缺少的，也是最关键的！
+        // 写入配置寄存器，将 RS 位 (Bit 29) 置 1
+        // 0x20000000 对应 RS=1
+        CS5530_Write_Config(i, 0x20000000); 
+        
+        // 必须延时！让芯片内部逻辑复位
+        Delay_ms(50); 
+        
+        // 再次写入，将 RS 位清零，让芯片开始工作
+        // 0x00000000
+        CS5530_Write_Config(i, 0x00000000);
+        Delay_ms(10);
+
+        // === 第三步：写入实际配置 (800Hz) ===
+        // 0x00085000: RS=0, 800Hz
+        CS5530_Write_Config(i, 0x00085000);
+        
+
     }
 
-    // 4. 正式对所有芯片写入 800Hz 配置
-    debug_printf("  > [INIT] Configuring all 12 chips...\r\n");
-    for (int i = 0; i < CS5530_COUNT; i++) {
-        CS5530_Write_Config(i, config_val); 
-        Soft_Delay(1000);
-    }
-    
-    debug_printf("  > [INIT] Done.\r\n");
 }
 
 /**
@@ -168,42 +176,81 @@ void CS5530_Start_Continuous(void) {
     }
 }
 // 读取 ADC 数据 (严格遵循 CS5530 的 40 SCLK 时序)
-int32_t CS5530_Read_Data(uint8_t ch_index, uint8_t *new_data_flag) {
-    uint8_t r[5] = {0}; // 需要5个字节缓冲区
+int32_t CS5530_Read_Data(uint8_t ch_index, uint8_t *new_data_flag) 
+{
+    uint8_t tx_dummy = 0x00;
+    uint8_t rx_buf[4] = {0}; // 参考代码读了4个字节
     int32_t result = 0;
+    uint32_t timeout_counter = 0;
     
     *new_data_flag = 0;
 
+    // 1. 选中芯片
     CS5530_Select(ch_index);
     
-    Soft_Delay(500);
-    
-    // 1. 检测 MISO (RDY) 是否变低
-    if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_11) == GPIO_PIN_RESET) {
+    // === 关键点 A: 模拟参考代码的 while(STU_SDO) ===
+    // 等待 MISO (SDO) 变低，表示数据准备好了
+    // 假设 MISO 接在 PC11 (根据你之前的描述)
+    while (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_11) == GPIO_PIN_SET) 
+    {
+        // vTaskDelay(1);
+        timeout_counter++;
+        // 简单的延时，防止查太快
+        for(volatile int k=0; k<10; k++) __NOP(); 
         
-        // 2. 时序要求：40 SCLKs (5 Bytes)
-        // Byte 0: 必须发送 0x00 (NOP) 来清除 SDO 标志
-        SPI_Exchange(CMD_NULL); 
-        
-        // Byte 1-4: 读取 32位 转换数据寄存器
-        // [Data 24-bit] + [Status 8-bit]
-        r[0] = SPI_Exchange(CMD_NULL); // Data High (MSB)
-        r[1] = SPI_Exchange(CMD_NULL); // Data Mid
-        r[2] = SPI_Exchange(CMD_NULL); // Data Low (LSB)
-        r[3] = SPI_Exchange(CMD_NULL); // Status Byte (包含 OF 溢出位)
-        
-        // 3. 组装 24位 数据 (丢弃最后的 Status 字节)
-        result = ((int32_t)r[0] << 16) | ((int32_t)r[1] << 8) | r[2];
-        
-        // 4. 符号扩展 (24位转32位有符号整数)
-        if (result & 0x800000) {
-            result |= 0xFF000000;
+        // === 关键点 B: 超时重置机制 ===
+        if (timeout_counter > READ_TIMEOUT_LIMIT) 
+        {
+            // 参考代码在这里做了复位，我们也做！
+            CS5530_Deselect(ch_index);
+            
+            // 执行单通道复位 (参考我之前给你的 ADC_Recover_Channel)
+            ADC_Recover_Channel(ch_index); 
+            
+            return 0; // 直接返回
         }
-        
-        *new_data_flag = 1;
     }
+
+    // === 关键点 C: 严格的 40 SCLK 时序 ===
+    // 参考代码：先 cs5532_wr_byte(0x00); 然后读 4 个字节
     
+    // 步骤 1: 发送 1 字节 NOP (0x00) 清除 SDO 标志
+    // 注意：只发不存，利用 HAL 库的 Transmit
+    if (HAL_SPI_Transmit(&hspi3, &tx_dummy, 1, 10) != HAL_OK) {
+        CS5530_Deselect(ch_index);
+        return 0;
+    }
+
+    // 步骤 2: 连续读取 4 个字节 (High, Mid, Low, Status)
+    // 参考代码：cs5532_buf[3]..[0] = cs5532_rd_byte();
+    if (HAL_SPI_Receive(&hspi3, rx_buf, 4, 10) != HAL_OK) {
+        CS5530_Deselect(ch_index);
+        return 0;
+    }
+
     CS5530_Deselect(ch_index);
+
+    // === 关键点 D: 数据拼接 ===
+    // 参考代码把 buf 强转为 signed long，对应大端序拼接
+    // rx_buf[0] 是高位 (High Byte)
+    // rx_buf[1] 是中位 (Mid Byte)
+    // rx_buf[2] 是低位 (Low Byte)
+    // rx_buf[3] 是状态位 (参考代码没有用这个做数据，而是用来判断 status)
+    
+    // 拼接 24位 有符号数据
+    result = ((int32_t)rx_buf[0] << 16) | 
+             ((int32_t)rx_buf[1] << 8)  | 
+             (int32_t)rx_buf[2];
+
+    // 符号扩展 (24bit -> 32bit)
+    if (result & 0x800000) {
+        result |= 0xFF000000;
+    }
+
+
+    //右移6位，保持原始值
+    result >>= 6;
+    *new_data_flag = 1;
     return result;
 }
 // 重启指定通道的 ADC 

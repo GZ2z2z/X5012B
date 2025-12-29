@@ -7,7 +7,8 @@
 typedef enum {
     SYS_STATE_INIT_ERROR,      
     SYS_STATE_RUNNING_NO_COMM,  
-    SYS_STATE_COMM_ESTABLISHED  
+    SYS_STATE_COMM_ESTABLISHED, 
+    SYS_STATE_NET_RESET         
 } SystemState_t;
 
 // 全局状态变量

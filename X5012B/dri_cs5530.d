@@ -24,7 +24,6 @@ x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_exti.h
 x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h
 x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma_ex.h
 x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_cortex.h
-x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_can.h
 x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash.h
 x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ex.h
 x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ramfunc.h
@@ -33,7 +32,6 @@ x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h
 x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_spi.h
 x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
 x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
-x5012b\dri_cs5530.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
 x5012b\dri_cs5530.o: ./Common/Com_Debug.h
 x5012b\dri_cs5530.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 x5012b\dri_cs5530.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
@@ -53,4 +51,3 @@ x5012b\dri_cs5530.o: ./freeRTOS/portable/portmacro.h
 x5012b\dri_cs5530.o: ./freeRTOS/include/mpu_wrappers.h
 x5012b\dri_cs5530.o: ./freeRTOS/include/task.h
 x5012b\dri_cs5530.o: ./freeRTOS/include/list.h
-x5012b\dri_cs5530.o: ./Common/Com_Util.h

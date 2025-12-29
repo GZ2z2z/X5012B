@@ -86,8 +86,9 @@
  *   GPIO_PIN_RESET -> Coil = 1 (ON)
  *   GPIO_PIN_SET   -> Coil = 0 (OFF)
  */
-#define REG_COILS_START 1
-#define REG_COILS_NCOILS 2
+
+#define REG_COILS_START   1
+#define REG_COILS_NCOILS  12
 
 /* -------------------- Discrete Input（2 路 DI）定义 -------------------- */
 /*
