@@ -1,0 +1,14 @@
+x5012b\mb.o: Interface\freeModbus\mb.c
+x5012b\mb.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+x5012b\mb.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+x5012b\mb.o: ./Interface/freeModbus/port/port.h
+x5012b\mb.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\assert.h
+x5012b\mb.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\inttypes.h
+x5012b\mb.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+x5012b\mb.o: ./Interface/freeModbus/include/mb.h
+x5012b\mb.o: ./Interface/freeModbus/include/mbport.h
+x5012b\mb.o: ./Interface/freeModbus/include/mbproto.h
+x5012b\mb.o: ./Interface/freeModbus/include/mbconfig.h
+x5012b\mb.o: ./Interface/freeModbus/include/mbframe.h
+x5012b\mb.o: ./Interface/freeModbus/include/mbfunc.h
+x5012b\mb.o: ./Interface/freeModbus/tcp/mbtcp.h

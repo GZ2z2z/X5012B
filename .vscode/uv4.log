@@ -18,7 +18,7 @@ Feature(s) : GDB, RDI, FlashBP, FlashDL, JFlash
 * JLink Info: JTAG Chain Identified. Connecting to DAP TAP...
 * JLink Info: Successfully connected to selected DAP TAP.
 * JLink Info: DAP initialized successfully.
-* JLink Info: InitTarget() end - Took 13.5ms
+* JLink Info: InitTarget() end - Took 14.0ms
 * JLink Info: TotalIRLen = 9, IRPrint = 0x0011
 * JLink Info: JTAG chain detection found 2 devices:
 * JLink Info:  #0 Id: 0x4BA00477, IRLen: 04, CoreSight JTAG-DP
@@ -48,7 +48,7 @@ ROMTableAddr = 0xE00FF000
 Target info:
 ------------
 Device: STM32F407VETx
-VTarget = 3.304V
+VTarget = 3.308V
 State of Pins: TCK: 1, TDI: 0, TDO: 1, TMS: 0, TRES: 1, TRST: 1
 Hardware-Breakpoints: 6
 Software-Breakpoints: 8192
@@ -62,5 +62,5 @@ Erase Done.Programming Done.Verify OK.* JLink Info: Memory map 'before startup c
 * JLink Info: Memory map 'after startup completion point' is active
 Application running ...
 * JLink Info: OnDisconnectTarget() start
-* JLink Info: OnDisconnectTarget() end - Took 862us
-Flash Load finished at 14:57:26
+* JLink Info: OnDisconnectTarget() end - Took 875us
+Flash Load finished at 11:58:33

@@ -20,11 +20,17 @@
                 "d:\\STM32Project\\X5012B\\MDK-ARM\\Interface\\ETH\\DNS",
                 "d:\\STM32Project\\X5012B\\MDK-ARM\\Interface\\ETH\\httpServer",
                 "d:\\STM32Project\\X5012B\\MDK-ARM\\Interface\\ETH\\W5500",
+                "d:\\STM32Project\\X5012B\\MDK-ARM\\Interface\\freeModbus",
+                "d:\\STM32Project\\X5012B\\MDK-ARM\\Interface\\freeModbus\\tcp",
+                "d:\\STM32Project\\X5012B\\MDK-ARM\\Interface\\freeModbus\\include",
+                "d:\\STM32Project\\X5012B\\MDK-ARM\\Interface\\freeModbus\\port",
+                "d:\\STM32Project\\X5012B\\MDK-ARM\\Interface\\freeModbus\\functions",
                 "D:\\Keil_v5\\ARM\\ARMCC\\include",
                 "D:\\Keil_v5\\ARM\\ARMCC\\include\\rw",
                 "d:\\STM32Project\\X5012B\\MDK-ARM",
                 "d:\\STM32Project\\X5012B\\Drivers\\STM32F4xx_HAL_Driver\\Src",
-                "d:\\STM32Project\\X5012B\\Core\\Src"
+                "d:\\STM32Project\\X5012B\\Core\\Src",
+                "d:\\STM32Project\\X5012B\\MDK-ARM\\Interface\\freeModbus\\rtu"
             ],
             "defines": [
                 "USE_HAL_DRIVER",

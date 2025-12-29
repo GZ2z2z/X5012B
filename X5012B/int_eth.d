@@ -49,8 +49,15 @@ x5012b\int_eth.o: ./freeRTOS/portable/portmacro.h
 x5012b\int_eth.o: ./freeRTOS/include/mpu_wrappers.h
 x5012b\int_eth.o: ./freeRTOS/include/task.h
 x5012b\int_eth.o: ./freeRTOS/include/list.h
-x5012b\int_eth.o: ./Common/app_data.h
+x5012b\int_eth.o: ./Interface/freeModbus/include/mb.h
+x5012b\int_eth.o: ./Interface/freeModbus/port/port.h
+x5012b\int_eth.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\assert.h
+x5012b\int_eth.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\inttypes.h
+x5012b\int_eth.o: ./Interface/freeModbus/include/mbport.h
+x5012b\int_eth.o: ./Interface/freeModbus/include/mbproto.h
+x5012b\int_eth.o: ./Common/net_config.h
+x5012b\int_eth.o: ./Interface/Int_EEPROM.h
+x5012b\int_eth.o: ./Driver/Dri_I2C.h
 x5012b\int_eth.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 x5012b\int_eth.o: ./freeRTOS/include/semphr.h
 x5012b\int_eth.o: ./freeRTOS/include/queue.h
-x5012b\int_eth.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h

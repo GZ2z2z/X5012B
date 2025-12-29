@@ -212,3 +212,31 @@ cmd_fail: /* 命令执行失败后，切记发送停止信号，避免影响I2C�
 	i2c_Stop();
 	return 0;
 }
+
+// 初始化 wrapper
+void Int_EEPROM_Init(void)
+{
+    bsp_InitI2C(); // 调用底层的 GPIO 初始化
+    // 可以在这里加一个 check 检查设备是否存在
+    if(ee_CheckOk() == 0) {
+        // Log Error: EEPROM missing
+    }
+}
+
+// 读封装 (HAL_OK = 0x00)
+uint8_t Int_EEPROM_ReadBuffer(uint16_t addr, uint8_t *buffer, uint16_t length)
+{
+    if(ee_ReadBytes(buffer, addr, length) == 1) {
+        return 0; // 0 == HAL_OK
+    }
+    return 1; // Error
+}
+
+// 写封装
+uint8_t Int_EEPROM_WriteBuffer(uint16_t addr, uint8_t *buffer, uint16_t length)
+{
+    if(ee_WriteBytes(buffer, addr, length) == 1) {
+        return 0; // 0 == HAL_OK
+    }
+    return 1; // Error
+}

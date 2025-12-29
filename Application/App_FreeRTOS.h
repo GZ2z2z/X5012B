@@ -3,23 +3,27 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "mb.h"      // 包含FreeModbus主头文件
+#include "mbport.h"  // 包含FreeModbus移植层头文件
 #include "stdio.h"
 #include "main.h"
 #include "Com_Debug.h"
 #include "Com_Util.h"
 #include "Int_EEPROM.h"
 #include "app_data.h" 
-// #include "net_config.h"
+#include "net_config.h"
 #include <string.h>   // 为了使用 memset
 #include <math.h>
 #include "w5500.h"
 #include "Dri_CS5530.h"
-
+#include "app_led.h"
+#include "modbus_app.h"
+#include "Int_ETH.h"
 // RuntimeData_t g_runtime;
 
-// 简单的自定义协议帧头
-#define CMD_GET_ALL_DATA  0x01
-#define CMD_TARE          0x02
+
+extern uint16_t MBTCP_PortBufferedLen(void);
+
 
 void App_freeRTOS_Start(void);
 

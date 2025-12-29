@@ -183,11 +183,9 @@ void Commu_UDP_Task_Entry(void)
     // 2. W5500 Socket 状态机
     switch (status)
     {
-        // ---------------------------------------------
-        // 状态：Socket 关闭 (初始状态或异常断开后)
-        // ---------------------------------------------
+
         case SOCK_CLOSED:
-            // [LED] 端口关闭时，熄灭 COM 灯 (假设高电平灭)
+
             HAL_GPIO_WritePin(LED_COM_GPIO_Port, LED_COM_Pin, GPIO_PIN_SET);
 
             // 打开 UDP Socket，绑定端口 COMMU_UDP_PORT (9999)
@@ -197,13 +195,9 @@ void Commu_UDP_Task_Entry(void)
             }
             break;
 
-        // ---------------------------------------------
-        // 状态：UDP 模式 (正常通信状态)
-        // ---------------------------------------------
+
         case SOCK_UDP:
-            // [LED] 端口打开成功，点亮 COM 灯 (假设低电平亮)
-            // 注意：这里只是设为亮，如果在接收数据时翻转它，就会产生闪烁效果
-            // HAL_GPIO_WritePin(LED_COM_GPIO_Port, LED_COM_Pin, GPIO_PIN_RESET);
+
             
             // 检查接收缓冲区是否有数据
             recv_len = getSn_RX_RSR(sn);
@@ -265,9 +259,7 @@ void Commu_UDP_Task_Entry(void)
             }
             break;
 
-        // ---------------------------------------------
-        // 状态：异常
-        // ---------------------------------------------
+
         default:
             close(sn);
             // [LED] 异常状态灭灯

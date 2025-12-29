@@ -40,7 +40,6 @@ x5012b\net_config.o: ./Interface/ETH/W5500/w5500.h
 x5012b\net_config.o: ./Interface/ETH/wizchip_conf.h
 x5012b\net_config.o: ./Interface/Int_EEPROM.h
 x5012b\net_config.o: ./Driver/Dri_I2C.h
-x5012b\net_config.o: ./Common/Com_Util.h
 x5012b\net_config.o: ./freeRTOS/include/FreeRTOS.h
 x5012b\net_config.o: ./freeRTOS/FreeRTOSConfig.h
 x5012b\net_config.o: ./freeRTOS/include/projdefs.h

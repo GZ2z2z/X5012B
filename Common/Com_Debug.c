@@ -1,7 +1,7 @@
 // 文件：Com_Debug.c
 
 #include "Com_Debug.h"
-#include "App_Network.h"  // <--- 1. 必须包含这个头文件，才能获取 Socket ID 定义
+#include "Int_eth.h"
 
 void debug_printf(const char *format, ...)
 {
@@ -13,8 +13,8 @@ void debug_printf(const char *format, ...)
     va_end(args);
 
     // <--- 2. 将 DEBUG_SOCKET 修改为 SOCK_DEBUG (或者你在 App_Network.h 里定义的那个名字)
-    if (len > 0 && getSn_SR(SOCK_DEBUG) == SOCK_ESTABLISHED)
+    if (len > 0 && getSn_SR(DEBUG_SOCKET) == SOCK_ESTABLISHED)
     {
-        send(SOCK_DEBUG, (uint8_t *)buffer, len);
+        send(DEBUG_SOCKET, (uint8_t *)buffer, len);
     }
 }

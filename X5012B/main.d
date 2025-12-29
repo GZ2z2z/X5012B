@@ -35,6 +35,7 @@ x5012b\main.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 x5012b\main.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
 x5012b\main.o: ../Core/Inc/can.h
 x5012b\main.o: ../Core/Inc/spi.h
+x5012b\main.o: ../Core/Inc/tim.h
 x5012b\main.o: ../Core/Inc/usart.h
 x5012b\main.o: ../Core/Inc/gpio.h
 x5012b\main.o: ./Common/Com_Util.h
@@ -48,6 +49,12 @@ x5012b\main.o: ./freeRTOS/portable/portmacro.h
 x5012b\main.o: ./freeRTOS/include/mpu_wrappers.h
 x5012b\main.o: ./freeRTOS/include/task.h
 x5012b\main.o: ./freeRTOS/include/list.h
+x5012b\main.o: ./Interface/freeModbus/include/mb.h
+x5012b\main.o: ./Interface/freeModbus/port/port.h
+x5012b\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\assert.h
+x5012b\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\inttypes.h
+x5012b\main.o: ./Interface/freeModbus/include/mbport.h
+x5012b\main.o: ./Interface/freeModbus/include/mbproto.h
 x5012b\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 x5012b\main.o: ./Common/Com_Debug.h
 x5012b\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
@@ -59,5 +66,15 @@ x5012b\main.o: ./Interface/ETH/wizchip_conf.h
 x5012b\main.o: ./Common/app_data.h
 x5012b\main.o: ./Interface/Int_EEPROM.h
 x5012b\main.o: ./Driver/Dri_I2C.h
+x5012b\main.o: ./Common/net_config.h
+x5012b\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 x5012b\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h
 x5012b\main.o: ./Driver/Dri_CS5530.h
+x5012b\main.o: ./Application/app_led.h
+x5012b\main.o: ./Application/modbus_app.h
+x5012b\main.o: ./Interface/ETH/Int_eth.h
+x5012b\main.o: ./Interface/ETH/httpServer/httpServer.h
+x5012b\main.o: ./freeRTOS/include/semphr.h
+x5012b\main.o: ./freeRTOS/include/queue.h
+x5012b\main.o: ./Interface/freeModbus/include/mbutils.h
+x5012b\main.o: ./Application/App_FreeRTOS.h
