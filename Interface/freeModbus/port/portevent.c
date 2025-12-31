@@ -32,7 +32,7 @@
 // 定义一个队列句柄
 static QueueHandle_t xMBEventQueue = NULL;
 // 定义队列的长度
-#define MB_EVENT_QUEUE_LENGTH (20)
+#define MB_EVENT_QUEUE_LENGTH (50)
 
 /* ----------------------- Start implementation -----------------------------*/
 BOOL xMBPortEventInit(void)
@@ -61,7 +61,7 @@ void vMBPortEventClose(void)
 BOOL xMBPortEventPost(eMBEventType eEvent)
 {
     // portMAX_DELAY 表示如果队列满了，会一直等待直到有空间
-    if (xQueueSend(xMBEventQueue, &eEvent, portMAX_DELAY) == pdPASS)
+    if (xQueueSend(xMBEventQueue, &eEvent, 0) == pdPASS)
     {
         return TRUE;
     }
@@ -87,7 +87,7 @@ BOOL xMBPortEventPostFromISR(eMBEventType eEvent)
 BOOL xMBPortEventGet(eMBEventType *peEvent)
 {
     // portMAX_DELAY 表示如果队列是空的，任务会进入阻塞状态，一直等待事件到来
-    if (xQueueReceive(xMBEventQueue, peEvent, portMAX_DELAY) == pdPASS)
+    if (xQueueReceive(xMBEventQueue, peEvent, 0) == pdPASS)
     {
         return TRUE;
     }

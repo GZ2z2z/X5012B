@@ -194,7 +194,7 @@ eMBRegHoldingCB(UCHAR *pucRegBuffer, USHORT usAddress,
                 else if (iRegIndex >= REG_HOLD_NET_MAC0 && iRegIndex <= REG_HOLD_NET_MAC5)
                 {
                     g_net_info_cache.mac[iRegIndex - REG_HOLD_NET_MAC0] = (uint8_t)usValue;
-                    // MAC地址修改通常不需要频繁热重载，但如果你需要，也可以设为 true
+                    // MAC地址修改通常不需要频繁热重载，但需要，也可以设为 true
                     // is_net_changed = true;
                 }
                 /* 在 eMBRegHoldingCB 的写操作分支里增加 */
