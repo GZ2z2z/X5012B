@@ -72,3 +72,4 @@ x5012b\modbus_app.o: ./Common/Com_Util.h
 x5012b\modbus_app.o: ./Driver/Dri_CS5530.h
 x5012b\modbus_app.o: Application\app_led.h
 x5012b\modbus_app.o: Application\modbus_app.h
+x5012b\modbus_app.o: Application\App_Calib.h

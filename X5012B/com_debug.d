@@ -41,8 +41,7 @@ x5012b\com_debug.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 x5012b\com_debug.o: ./Interface/ETH/W5500/w5500.h
 x5012b\com_debug.o: ./Interface/ETH/wizchip_conf.h
 x5012b\com_debug.o: Common\app_data.h
-x5012b\com_debug.o: ./Interface/ETH/Int_eth.h
-x5012b\com_debug.o: ./Interface/ETH/httpServer/httpServer.h
+x5012b\com_debug.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 x5012b\com_debug.o: ./freeRTOS/include/FreeRTOS.h
 x5012b\com_debug.o: ./freeRTOS/FreeRTOSConfig.h
 x5012b\com_debug.o: ./freeRTOS/include/projdefs.h
@@ -52,6 +51,9 @@ x5012b\com_debug.o: ./freeRTOS/portable/portmacro.h
 x5012b\com_debug.o: ./freeRTOS/include/mpu_wrappers.h
 x5012b\com_debug.o: ./freeRTOS/include/task.h
 x5012b\com_debug.o: ./freeRTOS/include/list.h
+x5012b\com_debug.o: ./freeRTOS/include/queue.h
+x5012b\com_debug.o: ./Interface/ETH/Int_eth.h
+x5012b\com_debug.o: ./Interface/ETH/httpServer/httpServer.h
 x5012b\com_debug.o: ./Interface/freeModbus/include/mb.h
 x5012b\com_debug.o: ./Interface/freeModbus/port/port.h
 x5012b\com_debug.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\assert.h
@@ -61,6 +63,4 @@ x5012b\com_debug.o: ./Interface/freeModbus/include/mbproto.h
 x5012b\com_debug.o: ./Common/net_config.h
 x5012b\com_debug.o: ./Interface/Int_EEPROM.h
 x5012b\com_debug.o: ./Driver/Dri_I2C.h
-x5012b\com_debug.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 x5012b\com_debug.o: ./freeRTOS/include/semphr.h
-x5012b\com_debug.o: ./freeRTOS/include/queue.h

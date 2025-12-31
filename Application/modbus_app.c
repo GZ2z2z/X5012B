@@ -13,6 +13,12 @@ int32_t g_tare_offset[12] = {0};
 
 // 存储线圈状态 (0=绝对, 1=相对)
 uint8_t g_coil_states[12] = {0};
+
+static uint16_t usCurrentCalibCh = 0; // 当前操作的通道
+
+// 定义流模式的状态
+bool g_is_streaming_mode = false;
+
 extern bool NetConfig_SaveParams(uint8_t ip[4], uint8_t sn[4], uint8_t gw[4], uint16_t port);
 extern wiz_NetInfo g_net_info_cache;
 extern volatile bool g_apply_net_change_flag;
@@ -32,6 +38,8 @@ eMBRegHoldingCB(UCHAR *pucRegBuffer, USHORT usAddress,
     eMBErrorCode eStatus = MB_ENOERR;
     USHORT iRegIndex;
     bool is_net_changed = false; // 标记网络参数是否被修改
+    // 标记是否修改了标定数据，如果修改了，最后需要保存
+    bool is_calib_changed = false;
     /* 地址范围检查：REG_HOLDING_START=0，长度 REG_HOLDING_NREGS */
     if ((usAddress + usNRegs) <= (REG_HOLDING_START + REG_HOLDING_NREGS))
     {
@@ -114,9 +122,31 @@ eMBRegHoldingCB(UCHAR *pucRegBuffer, USHORT usAddress,
                         break;
                     }
                 }
+                // B. 标定参数区 (30-90)
+                else
+                {
+                    // 1. 通道索引 (30)
+                    if (iRegIndex == REG_CAL_CH_INDEX)
+                    {
+                        usValue = usCurrentCalibCh;
+                    }
+                    // 2. 码值表 (31-60) -> 对应 Weight
+                    else if (iRegIndex >= REG_CAL_WEIGHT_START && iRegIndex <= REG_CAL_WEIGHT_END)
+                    {
+                        int pt_idx = iRegIndex - REG_CAL_WEIGHT_START;
+                        usValue = (USHORT)g_CalibData[usCurrentCalibCh].points[pt_idx].weight_val;
+                    }
+                    // 3. 原始值表 (61-90) -> 对应 Raw
+                    else if (iRegIndex >= REG_CAL_RAW_START && iRegIndex <= REG_CAL_RAW_END)
+                    {
+                        int pt_idx = iRegIndex - REG_CAL_RAW_START;
+                        usValue = (USHORT)g_CalibData[usCurrentCalibCh].points[pt_idx].raw_code;
+                    }
+                }
+                // 2. 发送数据 (遵照你的要求：大端序，不交换)
+                *pucRegBuffer++ = (UCHAR)(usValue >> 8);   // High Byte First
+                *pucRegBuffer++ = (UCHAR)(usValue & 0xFF); // Low Byte Second
 
-                *pucRegBuffer++ = (UCHAR)(usValue >> 8);
-                *pucRegBuffer++ = (UCHAR)(usValue & 0xFF);
                 iRegIndex++;
                 usNRegs--;
             }
@@ -167,13 +197,59 @@ eMBRegHoldingCB(UCHAR *pucRegBuffer, USHORT usAddress,
                     // MAC地址修改通常不需要频繁热重载，但如果你需要，也可以设为 true
                     // is_net_changed = true;
                 }
+                /* 在 eMBRegHoldingCB 的写操作分支里增加 */
+                else if (iRegIndex == REG_STREAM_CTRL) // 95
+                {
+                    bool new_state = (usValue == 1);
 
+                    // 只有状态发生跳变时才处理
+                    if (g_is_streaming_mode != new_state)
+                    {
+                        if (new_state == true)
+                        {
+                            // 开启瞬间：清空队列，确保发出去的第一包数据是最新的
+                            xQueueReset(g_adc_data_queue);
+                        }
+                        g_is_streaming_mode = new_state;
+                    }
+                }
+                // B. 标定参数 (30-90)
+                else
+                {
+                    // 1. 切换当前通道
+                    if (iRegIndex == REG_CAL_CH_INDEX)
+                    {
+                        if (usValue < CALIB_CH_COUNT)
+                        {
+                            usCurrentCalibCh = usValue;
+                        }
+                    }
+                    // 2. 写入码值 (Weight)
+                    else if (iRegIndex >= REG_CAL_WEIGHT_START && iRegIndex <= REG_CAL_WEIGHT_END)
+                    {
+                        int pt_idx = iRegIndex - REG_CAL_WEIGHT_START;
+                        g_CalibData[usCurrentCalibCh].points[pt_idx].weight_val = (int16_t)usValue;
+                        is_calib_changed = true; // 标记数据变动
+                    }
+                    // 3. 写入原始值 (Raw)
+                    else if (iRegIndex >= REG_CAL_RAW_START && iRegIndex <= REG_CAL_RAW_END)
+                    {
+                        int pt_idx = iRegIndex - REG_CAL_RAW_START;
+                        // 这里接收 int16，如果你的ADC是负数，强转 int16 即可
+                        g_CalibData[usCurrentCalibCh].points[pt_idx].raw_code = (int16_t)usValue;
+                        is_calib_changed = true; // 标记数据变动
+                    }
+                }
                 // 移动指针
                 pucRegBuffer += 2;
                 iRegIndex++;
                 usNRegs--;
             }
-
+            // 如果标定数据发生了改变，立即计算有效点数并保存到 EEPROM
+            if (is_calib_changed)
+            {
+                Calib_RefreshCountAndSave((uint8_t)usCurrentCalibCh);
+            }
             // 4. 如果涉及网络参数修改，立即保存并触发热重载
             if (is_net_changed)
             {
@@ -201,40 +277,46 @@ eMBRegHoldingCB(UCHAR *pucRegBuffer, USHORT usAddress,
 }
 // modbus_app.c
 
-eMBErrorCode
-eMBRegInputCB(UCHAR *pucRegBuffer, USHORT usAddress, USHORT usNRegs)
+// 确保 modbus_app.h 里定义 REG_INPUT_START 为 0
+eMBErrorCode eMBRegInputCB(UCHAR *pucRegBuffer, USHORT usAddress, USHORT usNRegs)
 {
     eMBErrorCode eStatus = MB_ENOERR;
     int iRegIndex;
 
-    // 地址检查：映射 0-11 到 ADC 通道 0-11
-    if ((usAddress >= REG_INPUT_START) &&
-        (usAddress + usNRegs <= REG_INPUT_START + REG_INPUT_NREGS))
+    // 地址检查：0-23 (甚至更多)
+    if (usAddress + usNRegs <= REG_INPUT_START + REG_INPUT_NREGS)
     {
         iRegIndex = (int)(usAddress - REG_INPUT_START);
 
         while (usNRegs > 0)
         {
-            uint16_t usValue = 0;
+            // 计算通道号 (0-11)
+            int ch_idx = iRegIndex / 2;
+            bool is_high_word = ((iRegIndex % 2) == 0);
 
-            if (iRegIndex >= 0 && iRegIndex < 12)
+            if (ch_idx < 12)
             {
-                // 1. 获取原始值
-                int32_t raw = g_adc_buffer[iRegIndex];
+                // 1. 获取最新数据 (从全局缓存)
+                int32_t val = g_adc_buffer[ch_idx];
 
-                // 2. 减去皮重
-                // 如果是绝对模式(Coil=0)，g_tare_offset 是 0，相当于没减
-                // 如果是相对模式(Coil=1)，g_tare_offset 是之前存的值
-                int32_t final_val = raw - g_tare_offset[iRegIndex];
+                // 2. 去皮逻辑
+                if (g_coil_states[ch_idx] == 1) {
+                    val -= g_tare_offset[ch_idx];
+                }
 
-                // 3. 执行移位操作
-                // 注意：由于可能有负数，移位后再强转
-                usValue = (uint16_t)final_val;
+                // 3. 拆分 32-bit 为 16-bit
+                uint16_t sRegValue;
+                if (is_high_word) sRegValue = (uint16_t)((val >> 16) & 0xFFFF);
+                else              sRegValue = (uint16_t)(val & 0xFFFF);
+
+                // 4. 写入 Modbus 缓冲区 (大端)
+                *pucRegBuffer++ = (UCHAR)(sRegValue >> 8);
+                *pucRegBuffer++ = (UCHAR)(sRegValue & 0xFF);
             }
-
-            // Modbus 大端序填充
-            *pucRegBuffer++ = (UCHAR)(usValue >> 8);
-            *pucRegBuffer++ = (UCHAR)(usValue & 0xFF);
+            else
+            {
+                *pucRegBuffer++ = 0; *pucRegBuffer++ = 0;
+            }
 
             iRegIndex++;
             usNRegs--;
@@ -244,7 +326,6 @@ eMBRegInputCB(UCHAR *pucRegBuffer, USHORT usAddress, USHORT usNRegs)
     {
         eStatus = MB_ENOREG;
     }
-
     return eStatus;
 }
 
@@ -254,85 +335,58 @@ eMBRegCoilsCB(UCHAR *pucRegBuffer, USHORT usAddress, USHORT usNCoils,
 {
     eMBErrorCode eStatus = MB_ENOERR;
     int iIndex;
-    // int iCoilIndex;
 
-    // 1. 检查地址范围 (线圈 0-11 对应地址 REG_COILS_START 到 +11)
-    // 假设 REG_COILS_START 定义为 0 或 1，请根据你的 mb.h 调整，通常 Modbus 地址从 1 开始
-    // 这里假设你的 REG_COILS_START 是 1，对应线圈0 (Channel 0)
+    // 检查地址范围：线圈 0-11
     if ((usAddress >= REG_COILS_START) &&
-        (usAddress + usNCoils <= REG_COILS_START + 12)) // 只有12个通道
+        (usAddress + usNCoils <= REG_COILS_START + 12))
     {
-        // 计算数组起始索引
         iIndex = (int)(usAddress - REG_COILS_START);
 
         if (eMode == MB_REG_READ)
         {
-            /* --- 读线圈状态 --- */
-            UCHAR *pucBits = pucRegBuffer;
-            USHORT usBitsLeft = usNCoils;
-            USHORT usBitOffset = 0;
-
-            // 清空缓冲区以免残留脏数据
-            memset(pucRegBuffer, 0, (usNCoils + 7) / 8);
-
-            while (usBitsLeft > 0)
-            {
-                // 如果当前通道是相对模式(1)，则置位
-                if (g_coil_states[iIndex] == 1)
-                {
-                    // 设置字节中的特定位
-                    *pucBits |= (UCHAR)(1 << usBitOffset);
-                }
-
-                iIndex++;
-                usBitsLeft--;
-                usBitOffset++;
-
-                // 填满一个字节后，指针后移
-                if (usBitOffset == 8)
-                {
-                    usBitOffset = 0;
-                    pucBits++;
-                }
-            }
+            // ... (读线圈状态代码，通常不需要改，保持原样即可) ...
+            // 简单的位填充逻辑
+             UCHAR *pucBits = pucRegBuffer;
+             USHORT usBitsLeft = usNCoils;
+             USHORT usBitOffset = 0;
+             memset(pucRegBuffer, 0, (usNCoils + 7) / 8); // 清零
+             while(usBitsLeft--) {
+                 if(g_coil_states[iIndex++]) *pucBits |= (1 << usBitOffset);
+                 usBitOffset++;
+                 if(usBitOffset==8) { usBitOffset=0; pucBits++; }
+             }
         }
         else if (eMode == MB_REG_WRITE)
         {
-            /* --- 写线圈状态 (核心逻辑) --- */
+            /* --- 写线圈：控制去皮/清零 --- */
             UCHAR *pucBits = pucRegBuffer;
             USHORT usBitsLeft = usNCoils;
             USHORT usBitOffset = 0;
 
             while (usBitsLeft > 0)
             {
-                // 从缓冲区提取出当前位是 0 还是 1
+                // 获取上位机写入的 0 或 1
                 uint8_t new_state = (*pucBits >> usBitOffset) & 0x01;
 
-                // --- 状态切换逻辑 ---
+                // 核心去皮逻辑
                 if (new_state == 1)
                 {
-                    // 只要写 1，不管之前是啥，立刻抓取当前值作为皮重
+                    // === 上位机置 1：执行去皮 ===
+                    // 立即抓取当前的 ADC 原始值作为皮重
                     g_tare_offset[iIndex] = g_adc_buffer[iIndex];
+                    g_coil_states[iIndex] = 1;
                 }
                 else
                 {
-                    // [命令：恢复绝对值]
-                    // 写入 0，皮重清零
+                    // === 上位机置 0：清除皮重 ===
                     g_tare_offset[iIndex] = 0;
+                    g_coil_states[iIndex] = 0;
                 }
-
-                // 更新状态记录
-                g_coil_states[iIndex] = new_state;
 
                 iIndex++;
                 usBitsLeft--;
                 usBitOffset++;
-
-                if (usBitOffset == 8)
-                {
-                    usBitOffset = 0;
-                    pucBits++;
-                }
+                if (usBitOffset == 8) { usBitOffset = 0; pucBits++; }
             }
         }
     }
@@ -343,6 +397,7 @@ eMBRegCoilsCB(UCHAR *pucRegBuffer, USHORT usAddress, USHORT usNCoils,
 
     return eStatus;
 }
+
 /* 离散输入寄存器回调 (对应 02 功能码) */
 eMBErrorCode
 eMBRegDiscreteCB(UCHAR *pucRegBuffer, USHORT usAddress, USHORT usNDiscrete)

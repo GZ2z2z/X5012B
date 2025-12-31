@@ -15,5 +15,6 @@ uint8_t i2c_WaitAck(void);
 void i2c_Ack(void);
 void i2c_NAck(void);
 uint8_t i2c_CheckDevice(uint8_t _Address);
+void i2c_Delay(void);
 
 #endif

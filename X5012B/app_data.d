@@ -1,3 +1,15 @@
 x5012b\app_data.o: Common\app_data.c
 x5012b\app_data.o: Common\app_data.h
 x5012b\app_data.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+x5012b\app_data.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+x5012b\app_data.o: ./freeRTOS/include/FreeRTOS.h
+x5012b\app_data.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+x5012b\app_data.o: ./freeRTOS/FreeRTOSConfig.h
+x5012b\app_data.o: ./freeRTOS/include/projdefs.h
+x5012b\app_data.o: ./freeRTOS/include/portable.h
+x5012b\app_data.o: ./freeRTOS/include/deprecated_definitions.h
+x5012b\app_data.o: ./freeRTOS/portable/portmacro.h
+x5012b\app_data.o: ./freeRTOS/include/mpu_wrappers.h
+x5012b\app_data.o: ./freeRTOS/include/task.h
+x5012b\app_data.o: ./freeRTOS/include/list.h
+x5012b\app_data.o: ./freeRTOS/include/queue.h

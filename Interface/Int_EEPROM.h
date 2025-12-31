@@ -40,4 +40,6 @@ uint8_t ee_WriteBytes(uint8_t *_pWriteBuf, uint16_t _usAddress, uint16_t _usSize
 void Int_EEPROM_Init(void);
 uint8_t Int_EEPROM_ReadBuffer(uint16_t addr, uint8_t *buffer, uint16_t length);
 uint8_t Int_EEPROM_WriteBuffer(uint16_t addr, uint8_t *buffer, uint16_t length);
+void Int_EEPROM_WriteSafe(uint16_t WriteAddr, uint8_t *pBuffer, uint16_t NumByteToWrite);
+
 #endif

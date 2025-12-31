@@ -58,6 +58,7 @@
 "x5012b\app_freertos.o"
 "x5012b\app_led.o"
 "x5012b\modbus_app.o"
+"x5012b\app_calib.o"
 "x5012b\int_eeprom.o"
 "x5012b\dri_i2c.o"
 "x5012b\dri_cs5530.o"

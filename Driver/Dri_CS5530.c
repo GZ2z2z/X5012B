@@ -247,9 +247,8 @@ int32_t CS5530_Read_Data(uint8_t ch_index, uint8_t *new_data_flag)
         result |= 0xFF000000;
     }
 
-
-    //右移6位，保持原始值
-    result >>= 6;
+    // result >>= 6;
+    
     *new_data_flag = 1;
     return result;
 }

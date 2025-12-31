@@ -240,3 +240,96 @@ uint8_t Int_EEPROM_WriteBuffer(uint16_t addr, uint8_t *buffer, uint16_t length)
     }
     return 1; // Error
 }
+
+
+void EEPROM_Wait_WriteCycle(void)
+{
+    // 你的驱动里 i2c_CheckDevice 返回 0 表示检测到设备(ACK)，返回 1 表示忙/无设备
+    // 这里设置一个超时防止死循环
+    uint32_t timeout = 0xFFFF;
+    while(i2c_CheckDevice(EE_DEV_ADDR) != 0 && timeout--);
+}
+
+// 跨页安全写入函数
+void Int_EEPROM_WriteSafe(uint16_t WriteAddr, uint8_t *pBuffer, uint16_t NumByteToWrite)
+{
+    uint8_t NumOfPage = 0, NumOfSingle = 0, Addr = 0, count = 0, temp = 0;
+
+    // 计算当前页还剩多少字节可以写
+    // 例如：地址是 0x0102，页大小32，则 (0x0102 % 32) = 2，还剩 30 字节
+    Addr = WriteAddr % EE_PAGE_SIZE;
+    count = EE_PAGE_SIZE - Addr;
+    
+    // 如果要写的数据量 <= 当前页剩余空间 -> 不需要跨页，直接写
+    NumOfPage =  NumByteToWrite / EE_PAGE_SIZE;
+    NumOfSingle = NumByteToWrite % EE_PAGE_SIZE;
+
+    // 如果起始地址刚好是页对齐的 (Addr == 0)
+    if (Addr == 0) 
+    {
+        // 满页写入逻辑...
+        if (NumOfPage == 0) 
+        {
+            Int_EEPROM_WriteBuffer(WriteAddr, pBuffer, NumOfSingle);
+            EEPROM_Wait_WriteCycle(); // 必须等待内部写入完成
+        }
+        else 
+        {
+            while (NumOfPage--)
+            {
+                Int_EEPROM_WriteBuffer(WriteAddr, pBuffer, EE_PAGE_SIZE);
+                EEPROM_Wait_WriteCycle(); // 必须等待内部写入完成
+                WriteAddr += EE_PAGE_SIZE;
+                pBuffer += EE_PAGE_SIZE;
+            }
+            if (NumOfSingle != 0)
+            {
+                Int_EEPROM_WriteBuffer(WriteAddr, pBuffer, NumOfSingle);
+                EEPROM_Wait_WriteCycle(); // 必须等待内部写入完成
+            }
+        }
+    }
+    // 如果起始地址不对齐 (Addr != 0)
+    else 
+    {
+        // 情况A：数据量很小，甚至填不满当前页剩余空间
+        if (NumByteToWrite < count) 
+        {
+            NumOfPage = 0;
+            NumOfSingle = NumByteToWrite;
+            
+            Int_EEPROM_WriteBuffer(WriteAddr, pBuffer, NumOfSingle);
+            EEPROM_Wait_WriteCycle(); // 必须等待内部写入完成
+        }
+        // 情况B：数据量大，先把当前页剩余填满，再进行后续操作
+        else 
+        {
+            NumByteToWrite -= count;
+            NumOfPage =  NumByteToWrite / EE_PAGE_SIZE;
+            NumOfSingle = NumByteToWrite % EE_PAGE_SIZE;
+
+            // 1. 填满当前页剩余部分
+            Int_EEPROM_WriteBuffer(WriteAddr, pBuffer, count);
+            EEPROM_Wait_WriteCycle(); // 必须等待内部写入完成
+            
+            WriteAddr += count;
+            pBuffer += count;
+
+            // 2. 写中间的满页
+            while (NumOfPage--)
+            {
+                Int_EEPROM_WriteBuffer(WriteAddr, pBuffer, EE_PAGE_SIZE);
+                EEPROM_Wait_WriteCycle(); // 必须等待内部写入完成
+                WriteAddr += EE_PAGE_SIZE;
+                pBuffer += EE_PAGE_SIZE;
+            }
+
+            // 3. 写最后剩下的尾巴
+            if (NumOfSingle != 0)
+            {
+                Int_EEPROM_WriteBuffer(WriteAddr, pBuffer, NumOfSingle);
+                EEPROM_Wait_WriteCycle(); // 必须等待内部写入完成
+            }
+        }
+    }
+}

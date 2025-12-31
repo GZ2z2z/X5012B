@@ -42,6 +42,7 @@ x5012b\dri_cs5530.o: ../Core/Inc/spi.h
 x5012b\dri_cs5530.o: ./Interface/ETH/W5500/w5500.h
 x5012b\dri_cs5530.o: ./Interface/ETH/wizchip_conf.h
 x5012b\dri_cs5530.o: ./Common/app_data.h
+x5012b\dri_cs5530.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 x5012b\dri_cs5530.o: ./freeRTOS/include/FreeRTOS.h
 x5012b\dri_cs5530.o: ./freeRTOS/FreeRTOSConfig.h
 x5012b\dri_cs5530.o: ./freeRTOS/include/projdefs.h
@@ -51,3 +52,4 @@ x5012b\dri_cs5530.o: ./freeRTOS/portable/portmacro.h
 x5012b\dri_cs5530.o: ./freeRTOS/include/mpu_wrappers.h
 x5012b\dri_cs5530.o: ./freeRTOS/include/task.h
 x5012b\dri_cs5530.o: ./freeRTOS/include/list.h
+x5012b\dri_cs5530.o: ./freeRTOS/include/queue.h

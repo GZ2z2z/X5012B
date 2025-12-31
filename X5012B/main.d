@@ -60,10 +60,11 @@ x5012b\main.o: ./Interface/ETH/wizchip_conf.h
 x5012b\main.o: ./Interface/ETH/W5500/w5500.h
 x5012b\main.o: ./Interface/ETH/wizchip_conf.h
 x5012b\main.o: ./Common/app_data.h
+x5012b\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+x5012b\main.o: ./freeRTOS/include/queue.h
 x5012b\main.o: ./Interface/Int_EEPROM.h
 x5012b\main.o: ./Driver/Dri_I2C.h
 x5012b\main.o: ./Common/net_config.h
-x5012b\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 x5012b\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h
 x5012b\main.o: ./Driver/Dri_CS5530.h
 x5012b\main.o: ./Application/app_led.h
@@ -71,6 +72,6 @@ x5012b\main.o: ./Application/modbus_app.h
 x5012b\main.o: ./Interface/ETH/Int_eth.h
 x5012b\main.o: ./Interface/ETH/httpServer/httpServer.h
 x5012b\main.o: ./freeRTOS/include/semphr.h
-x5012b\main.o: ./freeRTOS/include/queue.h
 x5012b\main.o: ./Interface/freeModbus/include/mbutils.h
 x5012b\main.o: ./Application/App_FreeRTOS.h
+x5012b\main.o: ./Application/App_Calib.h

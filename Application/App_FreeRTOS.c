@@ -12,24 +12,43 @@ TaskHandle_t TASK_ADC_VERIFY_handle;
 // Modbus核心协议栈任务
 void Task_Modbus_TCP(void *param);
 #define TASK_MODBUS_STACK_SIZE 512
-#define TASK_MODBUS_PRIORITY (tskIDLE_PRIORITY + 3)
+#define TASK_MODBUS_PRIORITY (tskIDLE_PRIORITY + 5)
 TaskHandle_t TASK_MODBUS_handle;
 
 // W5500 Socket管理任务
 void Task_W5500_Manager(void *param);
 #define TASK_W5500_STACK_SIZE 512
-#define TASK_W5500_PRIORITY (tskIDLE_PRIORITY + 2)
+#define TASK_W5500_PRIORITY (tskIDLE_PRIORITY + 3)
 TaskHandle_t TASK_W5500_handle;
 
 void Task_LED_Entry(void *param);
 #define TASK_LED_STACK_SIZE 128
-#define TASK_LED_PRIORITY (tskIDLE_PRIORITY + 2)
+#define TASK_LED_PRIORITY (tskIDLE_PRIORITY + 3)
 TaskHandle_t TASK_LED_handle;
 
 int32_t g_adc_buffer[12] = {0};
+extern int32_t g_tare_offset[12];
+extern uint8_t g_coil_states[12];
+extern volatile bool g_is_streaming_mode;
+extern volatile bool g_apply_net_change_flag;
+extern uint16_t g_modbus_tcp_port;
+extern void MBTCP_PortResetRx(void);
+
+// 声明队列句柄
+QueueHandle_t g_adc_data_queue = NULL;
 
 void App_freeRTOS_Start(void)
 {
+
+    Int_EEPROM_Init();
+    Calib_Init();
+    g_adc_data_queue = xQueueCreate(10, sizeof(ModbusFakePacket_t));
+    if (g_adc_data_queue == NULL)
+    {
+        // 队列创建失败处理，卡死或报错
+        while (1)
+            ;
+    }
 
     // xTaskCreate(Task_Debug_Server, "Debug_Server", TASK_DEBUG_STACK_SIZE, NULL, TASK_DEBUG_PRIORITY, &TASK_DEBUG_handle);
 
@@ -37,7 +56,7 @@ void App_freeRTOS_Start(void)
 
     xTaskCreate(Task_W5500_Manager, "W5500_Manager", TASK_W5500_STACK_SIZE, NULL, TASK_W5500_PRIORITY, &TASK_W5500_handle);
     // 800Hz 比较快，优先级建议设高一点，防止被网络任务打断太久
-    xTaskCreate(Task_ADC_Verify, "ADC_Test", 2048, NULL, tskIDLE_PRIORITY + 2, &TASK_ADC_VERIFY_handle);
+    xTaskCreate(Task_ADC_Verify, "ADC_Test", 2048, NULL, tskIDLE_PRIORITY + 3, &TASK_ADC_VERIFY_handle);
 
     xTaskCreate(Task_LED_Entry, "LED_Task", TASK_LED_STACK_SIZE, NULL, TASK_LED_PRIORITY, &TASK_LED_handle);
 
@@ -134,15 +153,15 @@ static void Restore_Network_Defaults(void)
 
 void Task_W5500_Manager(void *param)
 {
-    extern volatile bool g_apply_net_change_flag;
-    extern uint16_t g_modbus_tcp_port;
-    extern void MBTCP_PortResetRx(void);
+
     const TickType_t SHORT_DELAY = pdMS_TO_TICKS(10);
 
     static uint32_t disconnect_start_tick = 0;
 
     static uint32_t cfg_btn_press_start = 0;
     static bool cfg_btn_processed = false;
+    // 接收队列数据的缓存
+    ModbusFakePacket_t tx_packet;
     Int_ETH_Init(); // 只在上电/重启时做一次初始化
 
     g_system_state = SYS_STATE_RUNNING_NO_COMM;
@@ -228,70 +247,64 @@ void Task_W5500_Manager(void *param)
         switch (sn_sr)
         {
         case SOCK_CLOSED:
-        {
             MBTCP_PortResetRx();
-
-            // 护栏：端口为 0 就回退默认 502
             if (g_modbus_tcp_port == 0)
-                g_modbus_tcp_port = 502;
+                g_modbus_tcp_port = 502; // 保护
 
-            int8_t sret = socket(MODBUS_SOCKET, Sn_MR_TCP, g_modbus_tcp_port, 0x00);
-            if (sret != MODBUS_SOCKET)
-                vTaskDelay(pdMS_TO_TICKS(100));
+            // 打开 Socket
+            if (socket(MODBUS_SOCKET, Sn_MR_TCP, g_modbus_tcp_port, 0x00) != MODBUS_SOCKET)
+            {
+                vTaskDelay(pdMS_TO_TICKS(100)); // 失败退避
+            }
             break;
-        }
 
         case SOCK_INIT:
-        {
-            static uint32_t init_enter_tick = 0;
-            if (init_enter_tick == 0)
-                init_enter_tick = HAL_GetTick();
-
-            int8_t lret = listen(MODBUS_SOCKET);
-            if (lret != SOCK_OK)
+            // 执行 Listen
+            if (listen(MODBUS_SOCKET) != SOCK_OK)
             {
-                // 监听失败：短暂退避后继续尝试
                 vTaskDelay(pdMS_TO_TICKS(50));
             }
             else
             {
-                // 调用成功也给芯片一点时间切到 LISTEN
-                vTaskDelay(pdMS_TO_TICKS(10));
-            }
-
-            // 如果在 INIT 卡了 >= 500ms，说明 listen 没生效或被打断：重建 socket
-            if (HAL_GetTick() - init_enter_tick >= 500)
-            {
-                close(MODBUS_SOCKET);
-                MBTCP_PortResetRx(); // 清端口层残留，防止跨连接粘包
-                int8_t sret = socket(MODBUS_SOCKET, Sn_MR_TCP, g_modbus_tcp_port, 0x00);
-                // 若 socket 开失败，再退避一会
-                if (sret != MODBUS_SOCKET)
-                    vTaskDelay(pdMS_TO_TICKS(100));
-                init_enter_tick = 0; // 重新计时
+                vTaskDelay(pdMS_TO_TICKS(10)); // 等待状态翻转
             }
             break;
-        }
 
         case SOCK_LISTEN:
-            vTaskDelay(pdMS_TO_TICKS(500));
+            // 监听中，定期检查连接请求，稍微延时释放CPU
+            vTaskDelay(pdMS_TO_TICKS(100));
             break;
 
         case SOCK_ESTABLISHED:
         {
-            uint16_t rsr = getSn_RX_RSR(MODBUS_SOCKET);
-            uint16_t buf = MBTCP_PortBufferedLen();
 
-            if (rsr > 0 || buf > 0)
+            // 1. 从队列获取 ADC 数据 (超时 10ms，如果没有数据就继续循环)
+            if (xQueueReceive(g_adc_data_queue, &tx_packet, pdMS_TO_TICKS(10)) == pdTRUE)
             {
-                // 有新数据或有残留数据需要继续解析，通知 Modbus 任务
-                xMBPortEventPost(EV_FRAME_RECEIVED);
-                vTaskDelay(pdMS_TO_TICKS(5));
+                // 2. 检查 W5500 发送缓冲区剩余空间
+                // 只有当缓冲区空间 > 数据包大小时才发送，防止堵死
+                if (getSn_TX_FSR(MODBUS_SOCKET) >= sizeof(tx_packet))
+                {
+                    // 3. 执行发送
+                    // 注意：这里发送的是 raw binary 数据。
+                    // 包含：Head(2) + Float*12(48) + Tail(2) = 52 字节
+                    send(MODBUS_SOCKET, (uint8_t *)&tx_packet, sizeof(tx_packet));
+                }
+                else
+                {
+                    // 缓冲区已满，这里选择丢包（实时性优先），或者你可以做重试逻辑
+                    // 打印调试信息: Buffer Full
+                }
             }
-            else
+
+            // 4. 处理接收数据 (保持 Modbus 协议栈兼容性，防止 RX 溢出)
+            uint16_t rsr = getSn_RX_RSR(MODBUS_SOCKET);
+            if (rsr > 0)
             {
-                // 空闲时延时稍微长一点，减少 SPI 总线占用，给 ADC 任务留出带宽
-                vTaskDelay(pdMS_TO_TICKS(20));
+                // 如果收到上位机指令（如修改参数），通知 Modbus 任务处理
+                // 注意：如果只是纯流模式，这里可以只做 recv() 并丢弃，或者解析配置指令
+                xMBPortEventPost(EV_FRAME_RECEIVED);
+                vTaskDelay(pdMS_TO_TICKS(2));
             }
             break;
         }
@@ -301,6 +314,7 @@ void Task_W5500_Manager(void *param)
         case SOCK_FIN_WAIT:
         case SOCK_CLOSING:
         case SOCK_TIME_WAIT:
+            // 收到断开请求，关闭 Socket
             disconnect(MODBUS_SOCKET);
             close(MODBUS_SOCKET);
             MBTCP_PortResetRx();
@@ -314,72 +328,72 @@ void Task_W5500_Manager(void *param)
     }
 }
 
-ADC_Health_t AdcHealth[12] = {0};
 void Task_ADC_Verify(void *param)
 {
-    // 1. 等待网络稳定
+    // 1. 初始化
     vTaskDelay(pdMS_TO_TICKS(500));
-    // debug_printf("\r\n=== ADC 800Hz Data View (With Auto-Recovery) ===\r\n");
-
-    // 2. 初始化
     CS5530_Init_All();
-
-    // 3. 启动连续转换
     CS5530_Start_Continuous();
 
     uint8_t ready_flags[12];
-    // uint32_t print_timer = 0;
-    // uint32_t print_threshold = 500;
+    ModbusFakePacket_t packet;
+
+    // === 2. 预填充固定头部 ===
+    packet.trans_id   = 0x0000; // 由发送任务填充
+    packet.proto_id   = 0x0000;
+    packet.length     = 0x3300; // 0x0033 (51 bytes) 的网络序
+    packet.unit_id    = 0x01;
+    packet.func_code  = 0x04;   // 模拟读输入寄存器响应
+    packet.byte_count = 48;     // 12通道 * 4字节 = 48字节
 
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
     while (1)
     {
-        if (g_system_state != SYS_STATE_COMM_ESTABLISHED)
+        // === 3. 连接状态检查 ===
+        // 只有当 Modbus 端口处于连接状态时，才进行高频采样和发送
+        // 如果断开连接，则降低频率轮询，等待重连
+        if (getSn_SR(MODBUS_SOCKET) != SOCK_ESTABLISHED)
         {
-            // 如果没连接，就让任务睡 200ms，让出 CPU
-            vTaskDelay(pdMS_TO_TICKS(200));
-
-            // 关键：重置时间基准
-            // 否则当你一旦连上，vTaskDelayUntil 会为了“追赶”之前的时间而瞬间执行很多次
-            xLastWakeTime = xTaskGetTickCount();
-            continue; // 跳过本次循环，不执行下面的采样
+            // vTaskDelay(pdMS_TO_TICKS(200)); 
+            continue; 
         }
+
+        // 1. 必须始终读取硬件，保持滤波器稳定
         for (int i = 0; i < 12; i++)
         {
-            // 这里的采样逻辑保持你之前修改后的 (使用 CS5530_Read_Data_Optimized)
-            int32_t temp_val = CS5530_Read_Data(i, &ready_flags[i]);
-
-            if (ready_flags[i] == 1)
-            {
-                g_adc_buffer[i] = temp_val;
-                AdcHealth[i].error_count = 0; // 读到数据就清零错误计数
+            int32_t raw = CS5530_Read_Data(i, &ready_flags[i]);
+            
+            // 2. 无论什么模式，都更新全局缓存 g_adc_buffer
+            // 这样 eMBRegInputCB 随时能取到最新值
+            if(ready_flags[i] == 1) {
+                g_adc_buffer[i] = raw;
+            } else {
+                raw = g_adc_buffer[i]; // 没准备好就用旧值
             }
-            else
+
+            // 3. 只有在流模式下，才准备发送包
+            if (g_is_streaming_mode)
             {
-                // 没读到数据 (超时)，不做处理，或者仅做简单统计
+                int32_t final_val = raw;
+                // 去皮
+                if (g_coil_states[i] == 1) final_val -= g_tare_offset[i];
+                
+                // 填包 (Big Endian)
+                int base = i*4;
+                packet.data[base+0] = (final_val >> 24) & 0xFF;
+                packet.data[base+1] = (final_val >> 16) & 0xFF;
+                packet.data[base+2] = (final_val >> 8)  & 0xFF;
+                packet.data[base+3] = (final_val)       & 0xFF;
             }
         }
 
-        // // ============================================================
-        // // 打印逻辑
-        // // ============================================================
-        // print_timer++;
-        // if (print_timer >= print_threshold) // 500ms 打印一次
-        // {
-        //     print_timer = 0;
-        //     debug_printf("\r\n--- ADC Data Snapshot ---\r\n");
+        // 4. 门控发送：只有开关打开，才入队
+        if (g_is_streaming_mode)
+        {
+            xQueueSend(g_adc_data_queue, &packet, 0);
+        }
 
-        //     debug_printf("Raw[0-5]:  %ld  %ld  %ld  %ld  %ld  %ld\r\n",
-        //                  g_adc_buffer[0], g_adc_buffer[1], g_adc_buffer[2],
-        //                  g_adc_buffer[3], g_adc_buffer[4], g_adc_buffer[5]);
-
-        //     debug_printf("Raw[6-11]: %ld  %ld  %ld  %ld  %ld  %ld\r\n",
-        //                  g_adc_buffer[6], g_adc_buffer[7], g_adc_buffer[8],
-        //                  g_adc_buffer[9], g_adc_buffer[10], g_adc_buffer[11]);
-        // }
-
-        // 维持 1ms 轮询
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(1));
     }
 }

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <ProjectOpt xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_optx.xsd">
 
   <SchemaVersion>1.0</SchemaVersion>
@@ -45,7 +45,7 @@
         <PageWidth>79</PageWidth>
         <PageLength>66</PageLength>
         <TabStop>8</TabStop>
-        <ListingPath />
+        <ListingPath></ListingPath>
       </OPTLEX>
       <ListingPage>
         <CreateCListing>1</CreateCListing>
@@ -104,16 +104,16 @@
         <bSchkAxf>0</bSchkAxf>
         <bTchkAxf>0</bTchkAxf>
         <nTsel>4</nTsel>
-        <sDll />
-        <sDllPa />
-        <sDlgDll />
-        <sDlgPa />
-        <sIfile />
-        <tDll />
-        <tDllPa />
-        <tDlgDll />
-        <tDlgPa />
-        <tIfile />
+        <sDll></sDll>
+        <sDllPa></sDllPa>
+        <sDlgDll></sDlgDll>
+        <sDlgPa></sDlgPa>
+        <sIfile></sIfile>
+        <tDll></tDll>
+        <tDllPa></tDllPa>
+        <tDlgDll></tDlgDll>
+        <tDlgPa></tDlgPa>
+        <tIfile></tIfile>
         <pMon>Segger\JL2CM3.dll</pMon>
       </DebugOpt>
       <TargetDriverDllRegistry>
@@ -130,7 +130,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>ARMDBGFLAGS</Key>
-          <Name />
+          <Name></Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -167,7 +167,7 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>../Core/Src/main.c</Filename>
-          <ExecCommand />
+          <ExecCommand></ExecCommand>
           <Expression>\\X5012B\../Core/Src/main.c\139</Expression>
         </Bp>
         <Bp>
@@ -183,7 +183,7 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c</Filename>
-          <ExecCommand />
+          <ExecCommand></ExecCommand>
           <Expression>\\X5012B\../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c\224</Expression>
         </Bp>
         <Bp>
@@ -199,7 +199,7 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>../Core/Src/main.c</Filename>
-          <ExecCommand />
+          <ExecCommand></ExecCommand>
           <Expression>\\X5012B\../Core/Src/main.c\102</Expression>
         </Bp>
         <Bp>
@@ -215,7 +215,7 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>.\Application\App_FreeRTOS.c</Filename>
-          <ExecCommand />
+          <ExecCommand></ExecCommand>
           <Expression>\\X5012B\Application/App_FreeRTOS.c\49</Expression>
         </Bp>
         <Bp>
@@ -231,7 +231,7 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>.\freeRTOS\tasks.c</Filename>
-          <ExecCommand />
+          <ExecCommand></ExecCommand>
           <Expression>\\X5012B\freeRTOS/tasks.c\2052</Expression>
         </Bp>
         <Bp>
@@ -247,7 +247,7 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>.\freeRTOS\portable\port.c</Filename>
-          <ExecCommand />
+          <ExecCommand></ExecCommand>
           <Expression>\\X5012B\freeRTOS/portable/port.c\253</Expression>
         </Bp>
         <Bp>
@@ -263,7 +263,7 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>.\freeRTOS\portable\heap_4.c</Filename>
-          <ExecCommand />
+          <ExecCommand></ExecCommand>
           <Expression>\\X5012B\freeRTOS/portable/heap_4.c\269</Expression>
         </Bp>
         <Bp>
@@ -279,7 +279,7 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>../Core/Src/main.c</Filename>
-          <ExecCommand />
+          <ExecCommand></ExecCommand>
           <Expression>\\X5012B\../Core/Src/main.c\72</Expression>
         </Bp>
         <Bp>
@@ -295,7 +295,7 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>.\Application\App_FreeRTOS.c</Filename>
-          <ExecCommand />
+          <ExecCommand></ExecCommand>
           <Expression>\\X5012B\Application/App_FreeRTOS.c\49</Expression>
         </Bp>
       </Breakpoint>
@@ -328,19 +328,19 @@
         <newCpu>0</newCpu>
         <uProt>0</uProt>
       </DebugFlag>
-      <LintExecutable />
-      <LintConfigFile />
+      <LintExecutable></LintExecutable>
+      <LintConfigFile></LintConfigFile>
       <bLintAuto>0</bLintAuto>
       <bAutoGenD>0</bAutoGenD>
       <LntExFlags>0</LntExFlags>
-      <pMisraName />
-      <pszMrule />
-      <pSingCmds />
-      <pMultCmds />
-      <pMisraNamep />
-      <pszMrulep />
-      <pSingCmdsp />
-      <pMultCmdsp />
+      <pMisraName></pMisraName>
+      <pszMrule></pszMrule>
+      <pSingCmds></pSingCmds>
+      <pMultCmds></pMultCmds>
+      <pMisraNamep></pMisraNamep>
+      <pszMrulep></pszMrulep>
+      <pSingCmdsp></pSingCmdsp>
+      <pMultCmdsp></pMultCmdsp>
       <DebugDescription>
         <Enable>1</Enable>
         <EnableFlashSeq>1</EnableFlashSeq>
@@ -1677,6 +1677,30 @@
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
+    <File>
+      <GroupNumber>16</GroupNumber>
+      <FileNumber>101</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\Application\App_Calib.c</PathWithFileName>
+      <FilenameWithoutPath>App_Calib.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>16</GroupNumber>
+      <FileNumber>102</FileNumber>
+      <FileType>5</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\Application\App_Calib.h</PathWithFileName>
+      <FilenameWithoutPath>App_Calib.h</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
   </Group>
 
   <Group>
@@ -1687,7 +1711,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>17</GroupNumber>
-      <FileNumber>101</FileNumber>
+      <FileNumber>103</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1699,7 +1723,7 @@
     </File>
     <File>
       <GroupNumber>17</GroupNumber>
-      <FileNumber>102</FileNumber>
+      <FileNumber>104</FileNumber>
       <FileType>5</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1719,7 +1743,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>18</GroupNumber>
-      <FileNumber>103</FileNumber>
+      <FileNumber>105</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1731,7 +1755,7 @@
     </File>
     <File>
       <GroupNumber>18</GroupNumber>
-      <FileNumber>104</FileNumber>
+      <FileNumber>106</FileNumber>
       <FileType>5</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1743,7 +1767,7 @@
     </File>
     <File>
       <GroupNumber>18</GroupNumber>
-      <FileNumber>105</FileNumber>
+      <FileNumber>107</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1755,7 +1779,7 @@
     </File>
     <File>
       <GroupNumber>18</GroupNumber>
-      <FileNumber>106</FileNumber>
+      <FileNumber>108</FileNumber>
       <FileType>5</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1775,7 +1799,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>107</FileNumber>
+      <FileNumber>109</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1787,7 +1811,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>108</FileNumber>
+      <FileNumber>110</FileNumber>
       <FileType>5</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1799,7 +1823,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>109</FileNumber>
+      <FileNumber>111</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1811,7 +1835,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>110</FileNumber>
+      <FileNumber>112</FileNumber>
       <FileType>5</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1823,7 +1847,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>111</FileNumber>
+      <FileNumber>113</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1835,7 +1859,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>112</FileNumber>
+      <FileNumber>114</FileNumber>
       <FileType>5</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1847,7 +1871,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>113</FileNumber>
+      <FileNumber>115</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1859,7 +1883,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>114</FileNumber>
+      <FileNumber>116</FileNumber>
       <FileType>5</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>

@@ -13,16 +13,16 @@
 #include "Int_EEPROM.h"
 #include <math.h>
 #include "App_FreeRTOS.h"
-
+#include "App_Calib.h"
 
 
 //定义eeprom第二页起始地址
 #define EEPROM_PAGE2_ADDR 0x0020
 
-/* 输入寄存器起始地址和数量 */
-#define REG_INPUT_START 11
-#define REG_INPUT_NREGS 50
-
+// 修改输入寄存器起始地址为 0
+#define REG_INPUT_START 1
+// 修改寄存器数量至少为 24 (12通道 * 2)
+#define REG_INPUT_NREGS 30
 
 /* -------------------- 保持寄存器定义 -------------------- */
 /*
@@ -47,10 +47,6 @@
 #define REG_HOLDING_START 0
 #define REG_HOLDING_NREGS 100
 
-#define REG_HOLD_DAC0_OUT 0
-#define REG_HOLD_DAC1_OUT 1
-#define REG_HOLD_AI0_MODE 2   // 0=电压模式, 1=电流模式
-#define REG_HOLD_AI1_MODE 3   // 0=电压模式, 1=电流模式
 
 #define REG_HOLD_NET_IP0 10
 #define REG_HOLD_NET_IP1 11
@@ -76,6 +72,27 @@
 #define REG_HOLD_NET_MAC4 27
 #define REG_HOLD_NET_MAC5 28
 
+// === 新的标定寄存器布局 ===
+#define REG_CAL_START          30
+
+// 1. 通道选择 (1个寄存器)
+#define REG_CAL_CH_INDEX       30  
+
+// 2. 码值表 (30个寄存器)
+#define REG_CAL_WEIGHT_START   31
+#define REG_CAL_WEIGHT_COUNT   30  // 30个点
+#define REG_CAL_WEIGHT_END     (REG_CAL_WEIGHT_START + REG_CAL_WEIGHT_COUNT - 1) // 60
+
+// 3. 原始值表 (30个寄存器)
+#define REG_CAL_RAW_START      61
+#define REG_CAL_RAW_COUNT      30  // 30个点
+#define REG_CAL_RAW_END        (REG_CAL_RAW_START + REG_CAL_RAW_COUNT - 1)     // 90
+
+// 结束地址
+#define REG_CAL_END            REG_CAL_RAW_END // 90
+
+// 定义一个用于控制流模式的寄存器地址，例如 99
+#define REG_STREAM_CTRL        95
 
 
 /* -------------------- Coil（2 路 DO）定义 -------------------- */
