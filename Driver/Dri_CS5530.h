@@ -16,17 +16,12 @@
 #define CMD_SYNC1               0xFF  // 同步1
 #define CMD_NULL                0x00  // 空操作
 
-/* 寄存器定义 (命令字中的位) */
+/* 寄存器定义 */
 #define REG_CONFIG              0x03  // 配置寄存器
 #define REG_OFFSET              0x01  // 偏移寄存器
 #define REG_GAIN                0x02  // 增益寄存器
-#define REG_SETUP               0x04  // 建立寄存器 (CS5532等才有，5530主要是Config)
+#define REG_SETUP               0x04  // 建立寄存器 
 
-/* 配置寄存器位掩码 (参考数据手册) */
-// 假设使用 RS=1 (复位系统), 具体的字速率(Word Rate)设置需要根据你的晶振频率计算
-// 这里提供一个宏供初始化使用，具体数值可能需要根据你的MCLK调整
-// SF (Sinc Filter) bits [19:0] define the rate.
-// 假设使用默认设置进行验证
 
 /* 函数声明 */
 void CS5530_Init_All(void);

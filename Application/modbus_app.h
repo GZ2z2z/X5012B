@@ -15,107 +15,75 @@
 #include "App_FreeRTOS.h"
 #include "App_Calib.h"
 
+// ==============================================================================
+// 1. 线圈 (Coils) - 功能码 01/05/15
+// ==============================================================================
+// 解决 warning #47-D: incompatible redefinition
+#ifdef REG_COILS_SIZE
+#undef REG_COILS_SIZE
+#endif
 
-//定义eeprom第二页起始地址
-#define EEPROM_PAGE2_ADDR 0x0020
+#ifdef REG_COILS_START
+#undef REG_COILS_START
+#endif
 
-// 修改输入寄存器起始地址为 0
-#define REG_INPUT_START 1
-// 修改寄存器数量至少为 24 (12通道 * 2)
-#define REG_INPUT_NREGS 30
+// 地址 00-11: 对应通道 1-12 的清零(去皮)操作
+#define REG_COILS_START       1    
+#define REG_COILS_SIZE        12   
 
-/* -------------------- 保持寄存器定义 -------------------- */
-/*
- *  保持寄存器布局：
- *
- *  0 : DAC0 输出原始值（0~65535） -> 对应 DAC8532 通道 A
- *  1 : DAC1 输出原始值（0~65535） -> 对应 DAC8532 通道 B
- *
- * 
- *  10~13 : IP 地址，每个寄存器低 8 位为一个字节 (IP0..IP3)
- *  14~17 : 子网掩码 SN0..SN3
- *  18~21 : 网关 GW0..GW3
- *  22    : Modbus TCP 端口
- *  23    : 网络配置命令寄存器：
- *          - 写入 0xA55A：将 10~22 寄存器的值保存到 EEPROM
- *          - 读：
- *              0x0000：未保存或未执行
- *              0x0001：上次保存成功
- *              0xFFFF：上次保存失败
- */
+// ==============================================================================
+// 2. 离散输入 (Discrete Inputs) - 功能码 02
+// ==============================================================================
+#ifdef REG_DISC_SIZE
+#undef REG_DISC_SIZE
+#endif
 
-#define REG_HOLDING_START 0
-#define REG_HOLDING_NREGS 100
+#ifdef REG_DISC_START
+#undef REG_DISC_START
+#endif
 
+#define REG_DISC_START        1
+#define REG_DISC_SIZE         0    
 
-#define REG_HOLD_NET_IP0 10
-#define REG_HOLD_NET_IP1 11
-#define REG_HOLD_NET_IP2 12
-#define REG_HOLD_NET_IP3 13
+// ==============================================================================
+// 3. 输入寄存器 (Input Registers) - 功能码 04
+// ==============================================================================
+#ifdef REG_INPUT_START
+#undef REG_INPUT_START
+#endif
+#ifdef REG_INPUT_NREGS
+#undef REG_INPUT_NREGS
+#endif
 
-#define REG_HOLD_NET_SN0 14
-#define REG_HOLD_NET_SN1 15
-#define REG_HOLD_NET_SN2 16
-#define REG_HOLD_NET_SN3 17
+#define REG_INPUT_START       1    
+#define REG_INPUT_NREGS       100  
 
-#define REG_HOLD_NET_GW0 18
-#define REG_HOLD_NET_GW1 19
-#define REG_HOLD_NET_GW2 20
-#define REG_HOLD_NET_GW3 21
+// ==============================================================================
+// 4. 保持寄存器 (Holding Registers) - 功能码 03/06/16
+// ==============================================================================
+#ifdef REG_HOLDING_START
+#undef REG_HOLDING_START
+#endif
+#ifdef REG_HOLDING_NREGS
+#undef REG_HOLDING_NREGS
+#endif
 
-#define REG_HOLD_NET_PORT 22
+#define REG_HOLDING_START     1    
+#define REG_HOLDING_NREGS     400  
 
-#define REG_HOLD_NET_MAC0 23
-#define REG_HOLD_NET_MAC1 24
-#define REG_HOLD_NET_MAC2 25
-#define REG_HOLD_NET_MAC3 26
-#define REG_HOLD_NET_MAC4 27
-#define REG_HOLD_NET_MAC5 28
+// --- 网络参数 (10-28) ---
+#define REG_NET_IP_START      10
+#define REG_NET_SN_START      14
+#define REG_NET_GW_START      18
+#define REG_NET_PORT          22
+#define REG_NET_MAC_START     23
 
-// === 新的标定寄存器布局 ===
-#define REG_CAL_START          30
+// --- 标定参数 (31-390) ---
+#define REG_CAL_START_ADDR    31   
+#define REG_CAL_BLOCK_SIZE    30   
 
-// 1. 通道选择 (1个寄存器)
-#define REG_CAL_CH_INDEX       30  
-
-// 2. 码值表 (30个寄存器)
-#define REG_CAL_WEIGHT_START   31
-#define REG_CAL_WEIGHT_COUNT   30  // 30个点
-#define REG_CAL_WEIGHT_END     (REG_CAL_WEIGHT_START + REG_CAL_WEIGHT_COUNT - 1) // 60
-
-// 3. 原始值表 (30个寄存器)
-#define REG_CAL_RAW_START      61
-#define REG_CAL_RAW_COUNT      30  // 30个点
-#define REG_CAL_RAW_END        (REG_CAL_RAW_START + REG_CAL_RAW_COUNT - 1)     // 90
-
-// 结束地址
-#define REG_CAL_END            REG_CAL_RAW_END // 90
-
-// 定义一个用于控制流模式的寄存器地址，例如 99
-#define REG_STREAM_CTRL        95
-
-
-/* -------------------- Coil（2 路 DO）定义 -------------------- */
-/*
- * DO0 : 线圈地址 0
- * DO1 : 线圈地址 1
- * 注意：硬件如果是低电平有效（吸合），这里会做映射：
- *   GPIO_PIN_RESET -> Coil = 1 (ON)
- *   GPIO_PIN_SET   -> Coil = 0 (OFF)
- */
-
-#define REG_COILS_START   1
-#define REG_COILS_NCOILS  12
-
-/* -------------------- Discrete Input（2 路 DI）定义 -------------------- */
-/*
- * DI0 : 离散输入地址 0
- * DI1 : 离散输入地址 1
- */
-#define REG_DISCRETE_START 1
-#define REG_DISCRETE_NDISCRETES 2
-
-
+// --- 流模式控制 (95) ---
+#define REG_STREAM_CTRL       95
 
 void User_Modbus_Register_Init(void);
 

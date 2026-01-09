@@ -267,7 +267,7 @@ void Int_EEPROM_WriteSafe(uint16_t WriteAddr, uint8_t *pBuffer, uint16_t NumByte
     // 如果起始地址刚好是页对齐的 (Addr == 0)
     if (Addr == 0) 
     {
-        // 满页写入逻辑...
+        // 满页写入
         if (NumOfPage == 0) 
         {
             Int_EEPROM_WriteBuffer(WriteAddr, pBuffer, NumOfSingle);

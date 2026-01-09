@@ -16,7 +16,7 @@ static const CS_Pin_Map_t ADC_CS_PINS[CS5530_COUNT] = {
     {GPIOD, GPIO_PIN_2},  // ADC 2
     {GPIOD, GPIO_PIN_3},  // ADC 3
     {GPIOD, GPIO_PIN_4},  // ADC 4
-    {GPIOD, GPIO_PIN_7},  // ADC 5 (注意跳过了 5,6)
+    {GPIOD, GPIO_PIN_7},  // ADC 5 
     {GPIOD, GPIO_PIN_8},  // ADC 6
     {GPIOD, GPIO_PIN_9},  // ADC 7
     {GPIOD, GPIO_PIN_10}, // ADC 8
@@ -25,9 +25,6 @@ static const CS_Pin_Map_t ADC_CS_PINS[CS5530_COUNT] = {
     {GPIOD, GPIO_PIN_13}  // ADC 11
 };
 
-// ============================================================
-// 2. 底层辅助函数
-// ============================================================
 
 // 选中指定索引的 ADC (低电平有效)
 static void CS5530_Select(uint8_t idx) {
@@ -59,14 +56,11 @@ static void Soft_Delay(volatile uint32_t count) {
 }
 
 
-// 复位串口 (带打印调试)
+// 复位串口 
 void CS5530_Reset_Serial(void) {
     debug_printf("  > Reset Serial Sequence Start...\r\n");
     for (int i = 0; i < CS5530_COUNT; i++) {
-        // 打印进度，每处理一个芯片打一次点，防止刷屏
-        if(i == 0) debug_printf("    Resetting CH: ");
-        debug_printf("%d ", i);
-        
+
         CS5530_Select(i);
         // 发送 15 个 0xFF (Sync1)
         for (int k = 0; k < 15; k++) {
@@ -76,15 +70,9 @@ void CS5530_Reset_Serial(void) {
         SPI_Exchange(CMD_SYNC0);
         CS5530_Deselect(i);
         
-        // 替换 Delay_us(10)，改用软延时保证安全
         Soft_Delay(1000); 
     }
-    debug_printf("\r\n  > Reset Serial Done.\r\n");
 }
-// ==========================================
-// 修改后的初始化函数 
-// ==========================================
-
 // 写入配置寄存器
 // CS5530 Config Register: 32-bit
 // Cmd: 0x03 (Write Config)
@@ -117,7 +105,6 @@ static uint32_t CS5530_Read_Config(uint8_t ch_idx) {
 #define CYCLES_PER_MS  40000 
 
 static void Delay_ms(uint32_t ms) {
-    // 简单粗暴，永不卡死
     Soft_Delay(ms * CYCLES_PER_MS);
 }
 
@@ -143,14 +130,10 @@ void CS5530_Init_All(void)
         Delay_ms(10); 
 
         // === 第二步：系统复位 (System Reset via RS bit) ===
-        // 这一步是你之前缺少的，也是最关键的！
         // 写入配置寄存器，将 RS 位 (Bit 29) 置 1
         // 0x20000000 对应 RS=1
         CS5530_Write_Config(i, 0x20000000); 
-        
-        // 必须延时！让芯片内部逻辑复位
-        Delay_ms(50); 
-        
+        Delay_ms(50);
         // 再次写入，将 RS 位清零，让芯片开始工作
         // 0x00000000
         CS5530_Write_Config(i, 0x00000000);
@@ -159,8 +142,6 @@ void CS5530_Init_All(void)
         // === 第三步：写入实际配置 (800Hz) ===
         // 0x00085000: RS=0, 800Hz
         CS5530_Write_Config(i, 0x00085000);
-        
-
     }
 
 }
@@ -175,11 +156,11 @@ void CS5530_Start_Continuous(void) {
         CS5530_Deselect(i);
     }
 }
-// 读取 ADC 数据 (严格遵循 CS5530 的 40 SCLK 时序)
+// 读取 ADC 数据 
 int32_t CS5530_Read_Data(uint8_t ch_index, uint8_t *new_data_flag) 
 {
     uint8_t tx_dummy = 0x00;
-    uint8_t rx_buf[4] = {0}; // 参考代码读了4个字节
+    uint8_t rx_buf[4] = {0};
     int32_t result = 0;
     uint32_t timeout_counter = 0;
     
@@ -188,41 +169,34 @@ int32_t CS5530_Read_Data(uint8_t ch_index, uint8_t *new_data_flag)
     // 1. 选中芯片
     CS5530_Select(ch_index);
     
-    // === 关键点 A: 模拟参考代码的 while(STU_SDO) ===
     // 等待 MISO (SDO) 变低，表示数据准备好了
-    // 假设 MISO 接在 PC11 (根据你之前的描述)
     while (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_11) == GPIO_PIN_SET) 
     {
-        // vTaskDelay(1);
         timeout_counter++;
         // 简单的延时，防止查太快
         for(volatile int k=0; k<10; k++) __NOP(); 
         
-        // === 关键点 B: 超时重置机制 ===
+        //  超时重置机制 
         if (timeout_counter > READ_TIMEOUT_LIMIT) 
         {
-            // 参考代码在这里做了复位，我们也做！
+            // 复位
             CS5530_Deselect(ch_index);
             
-            // 执行单通道复位 (参考我之前给你的 ADC_Recover_Channel)
+            // 执行单通道复位
             ADC_Recover_Channel(ch_index); 
             
             return 0; // 直接返回
         }
     }
 
-    // === 关键点 C: 严格的 40 SCLK 时序 ===
-    // 参考代码：先 cs5532_wr_byte(0x00); 然后读 4 个字节
     
     // 步骤 1: 发送 1 字节 NOP (0x00) 清除 SDO 标志
-    // 注意：只发不存，利用 HAL 库的 Transmit
     if (HAL_SPI_Transmit(&hspi3, &tx_dummy, 1, 10) != HAL_OK) {
         CS5530_Deselect(ch_index);
         return 0;
     }
 
     // 步骤 2: 连续读取 4 个字节 (High, Mid, Low, Status)
-    // 参考代码：cs5532_buf[3]..[0] = cs5532_rd_byte();
     if (HAL_SPI_Receive(&hspi3, rx_buf, 4, 10) != HAL_OK) {
         CS5530_Deselect(ch_index);
         return 0;
@@ -230,13 +204,10 @@ int32_t CS5530_Read_Data(uint8_t ch_index, uint8_t *new_data_flag)
 
     CS5530_Deselect(ch_index);
 
-    // === 关键点 D: 数据拼接 ===
-    // 参考代码把 buf 强转为 signed long，对应大端序拼接
     // rx_buf[0] 是高位 (High Byte)
     // rx_buf[1] 是中位 (Mid Byte)
     // rx_buf[2] 是低位 (Low Byte)
-    // rx_buf[3] 是状态位 (参考代码没有用这个做数据，而是用来判断 status)
-    
+    // rx_buf[3] 是状态位 
     // 拼接 24位 有符号数据
     result = ((int32_t)rx_buf[0] << 16) | 
              ((int32_t)rx_buf[1] << 8)  | 
@@ -247,8 +218,6 @@ int32_t CS5530_Read_Data(uint8_t ch_index, uint8_t *new_data_flag)
         result |= 0xFF000000;
     }
 
-    // result >>= 6;
-    
     *new_data_flag = 1;
     return result;
 }

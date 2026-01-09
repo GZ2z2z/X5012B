@@ -1,6 +1,7 @@
 x5012b\app_calib.o: Application\App_Calib.c
 x5012b\app_calib.o: Application\App_Calib.h
 x5012b\app_calib.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+x5012b\app_calib.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 x5012b\app_calib.o: ./Interface/Int_EEPROM.h
 x5012b\app_calib.o: ../Core/Inc/main.h
 x5012b\app_calib.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h

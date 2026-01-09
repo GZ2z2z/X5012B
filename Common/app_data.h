@@ -6,11 +6,11 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
+
 // === 全局运行时数据 ===
 typedef struct {
     uint8_t is_linked;      // 网线物理连接状态
     uint8_t is_tcp_connected; // TCP 连接状态
-    // 这里可以加传感器数据等...
 } RuntimeData_t;
 
 // 必须按1字节对齐，防止编译器插入空隙
@@ -50,7 +50,6 @@ typedef union {
 
 
 extern RuntimeData_t g_runtime_data;
-
-extern QueueHandle_t g_adc_data_queue; // 确保这里也能引用队列
+extern QueueHandle_t g_adc_data_queue; 
 
 #endif /* __APP_DATA_H__ */

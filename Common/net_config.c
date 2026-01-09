@@ -26,7 +26,7 @@ static void NetConfig_FillDefault(NetConfig_t *cfg)
 {
     memset(cfg, 0, sizeof(NetConfig_t));
 
-    cfg->magic   = NETCFG_MAGIC;
+    cfg->magic = NETCFG_MAGIC;
     cfg->version = NETCFG_VERSION;
 
     cfg->ip[0] = NETCFG_DEFAULT_IP0;
@@ -44,7 +44,7 @@ static void NetConfig_FillDefault(NetConfig_t *cfg)
     cfg->gw[2] = NETCFG_DEFAULT_GW2;
     cfg->gw[3] = NETCFG_DEFAULT_GW3;
 
-    cfg->port  = NETCFG_DEFAULT_PORT;
+    cfg->port = NETCFG_DEFAULT_PORT;
 }
 
 /* ------------------- 从 EEPROM 读取配置 ------------------- */
@@ -64,7 +64,7 @@ bool NetConfig_LoadFromEEPROM(NetConfig_t *cfg)
     }
 
     uint16_t calc_crc = NetConfig_CalcCRC((uint8_t *)cfg,
-        (uint16_t)(sizeof(NetConfig_t) - sizeof(uint16_t))); // 不包含 crc16 字段
+                                          (uint16_t)(sizeof(NetConfig_t) - sizeof(uint16_t))); // 不包含 crc16 字段
 
     if (calc_crc != cfg->crc16)
     {
@@ -86,16 +86,13 @@ bool NetConfig_SaveToEEPROM(const NetConfig_t *cfg)
     tmp.crc16 = NetConfig_CalcCRC((uint8_t *)&tmp,
                                   (uint16_t)(sizeof(NetConfig_t) - sizeof(uint16_t)));
 
-    if (Int_EEPROM_WriteBuffer(NETCFG_EEPROM_ADDR, (uint8_t *)&tmp, sizeof(NetConfig_t)) != HAL_OK)
-    {
-        return false;
-    }
+    Int_EEPROM_WriteSafe(NETCFG_EEPROM_ADDR, (uint8_t *)&tmp, sizeof(NetConfig_t));
 
     return true;
 }
 
 /* ------------------- 直接用参数构造并保存 ------------------- */
-bool NetConfig_SaveParams(uint8_t ip[4], uint8_t sn[4], uint8_t gw[4], uint16_t port)
+bool NetConfig_SaveParams(uint8_t ip[4], uint8_t sn[4], uint8_t gw[4], uint8_t mac[6], uint16_t port)
 {
     NetConfig_t cfg;
     NetConfig_FillDefault(&cfg);
@@ -122,6 +119,16 @@ bool NetConfig_SaveParams(uint8_t ip[4], uint8_t sn[4], uint8_t gw[4], uint16_t 
         cfg.gw[1] = gw[1];
         cfg.gw[2] = gw[2];
         cfg.gw[3] = gw[3];
+    }
+
+    if (mac != NULL)
+    {
+        cfg.mac[0] = mac[0];
+        cfg.mac[1] = mac[1];
+        cfg.mac[2] = mac[2];
+        cfg.mac[3] = mac[3];
+        cfg.mac[4] = mac[4];
+        cfg.mac[5] = mac[5];
     }
 
     cfg.port = port;
