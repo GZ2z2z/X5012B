@@ -68,8 +68,10 @@ x5012b\modbus_app.o: Application\App_FreeRTOS.h
 x5012b\modbus_app.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 x5012b\modbus_app.o: ./Common/Com_Debug.h
 x5012b\modbus_app.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
-x5012b\modbus_app.o: ./Common/Com_Util.h
 x5012b\modbus_app.o: ./Driver/Dri_CS5530.h
 x5012b\modbus_app.o: Application\app_led.h
 x5012b\modbus_app.o: Application\modbus_app.h
 x5012b\modbus_app.o: Application\App_Calib.h
+x5012b\modbus_app.o: .\BSP\inc\bsp.h
+x5012b\modbus_app.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+x5012b\modbus_app.o: .\BSP\inc\bsp_cs553x.h

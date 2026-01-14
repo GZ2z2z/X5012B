@@ -63,9 +63,12 @@
 "x5012b\dri_i2c.o"
 "x5012b\dri_cs5530.o"
 "x5012b\com_debug.o"
-"x5012b\com_util.o"
 "x5012b\app_data.o"
 "x5012b\net_config.o"
+"x5012b\crc16.o"
+"x5012b\delay.o"
+"x5012b\bsp.o"
+"x5012b\bsp_cs553x.o"
 --library_type=microlib --strict --scatter "X5012B\X5012B.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

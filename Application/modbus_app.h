@@ -69,7 +69,7 @@
 #endif
 
 #define REG_HOLDING_START     1    
-#define REG_HOLDING_NREGS     400  
+#define REG_HOLDING_NREGS     1100  
 
 // --- 网络参数 (10-28) ---
 #define REG_NET_IP_START      10
@@ -84,6 +84,11 @@
 
 // --- 流模式控制 (95) ---
 #define REG_STREAM_CTRL       95
+
+#define REG_INT_CAL_PASSWORD  1000  // 密码位
+#define REG_INT_CAL_START     1001  // 数据区起始
+// 12通道 * 3个点 * 2个寄存器(int32) = 72 个寄存器
+#define REG_INT_CAL_LEN       (12 * 3 * 2)
 
 void User_Modbus_Register_Init(void);
 

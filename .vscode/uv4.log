@@ -1,5 +1,5 @@
 Load "X5012B\\X5012B.axf" 
-Set JLink Project File to "d:\STM32Project\X5012B\MDK-ARM\JLinkSettings.ini"* JLink Info: Device "STM32F407VE" selected.
+Set JLink Project File to "d:\STM32Project\X5012B\X5012B_TEST\MDK-ARM\JLinkSettings.ini"* JLink Info: Device "STM32F407VE" selected.
 
 JLink info:
 ------------
@@ -18,7 +18,7 @@ Feature(s) : GDB, RDI, FlashBP, FlashDL, JFlash
 * JLink Info: JTAG Chain Identified. Connecting to DAP TAP...
 * JLink Info: Successfully connected to selected DAP TAP.
 * JLink Info: DAP initialized successfully.
-* JLink Info: InitTarget() end - Took 13.0ms
+* JLink Info: InitTarget() end - Took 13.6ms
 * JLink Info: TotalIRLen = 9, IRPrint = 0x0011
 * JLink Info: JTAG chain detection found 2 devices:
 * JLink Info:  #0 Id: 0x4BA00477, IRLen: 04, CoreSight JTAG-DP
@@ -62,5 +62,5 @@ Erase Done.Programming Done.Verify OK.* JLink Info: Memory map 'before startup c
 * JLink Info: Memory map 'after startup completion point' is active
 Application running ...
 * JLink Info: OnDisconnectTarget() start
-* JLink Info: OnDisconnectTarget() end - Took 881us
-Flash Load finished at 09:37:59
+* JLink Info: OnDisconnectTarget() end - Took 852us
+Flash Load finished at 16:55:13

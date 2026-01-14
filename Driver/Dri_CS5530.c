@@ -3,7 +3,7 @@
 
 // 外部 SPI 句柄引用
 extern SPI_HandleTypeDef hspi3;
-#define READ_TIMEOUT_LIMIT  5000
+#define READ_TIMEOUT_LIMIT  200000
 
 typedef struct {
     GPIO_TypeDef* port;
@@ -117,31 +117,17 @@ void CS5530_Init_All(void)
 
     for (int i = 0; i < CS5530_COUNT; i++) 
     {
-        // === 第一步：串口复位 (Serial Port Initialization) ===
-        // 发送 15 个 0xFF 和 1 个 0xFE
-        // 作用：无论芯片当前在干什么（比如正在连续转换），
-        // 这个序列都能让它退回到等待命令的状态。
+
         CS5530_Select(i);
         for (int k = 0; k < 15; k++) SPI_Exchange(0xFF);
         SPI_Exchange(0xFE);
         CS5530_Deselect(i);
-        
-        // 稍微等一下让它反应过来
         Delay_ms(10); 
-
-        // === 第二步：系统复位 (System Reset via RS bit) ===
-        // 写入配置寄存器，将 RS 位 (Bit 29) 置 1
-        // 0x20000000 对应 RS=1
         CS5530_Write_Config(i, 0x20000000); 
         Delay_ms(50);
-        // 再次写入，将 RS 位清零，让芯片开始工作
-        // 0x00000000
         CS5530_Write_Config(i, 0x00000000);
         Delay_ms(10);
-
-        // === 第三步：写入实际配置 (800Hz) ===
-        // 0x00085000: RS=0, 800Hz
-        CS5530_Write_Config(i, 0x00085000);
+        CS5530_Write_Config(i, 0x00080800);
     }
 
 }

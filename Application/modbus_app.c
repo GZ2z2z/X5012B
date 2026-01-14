@@ -5,8 +5,14 @@ extern ChannelCalib_t g_CalibConfigs[CALIB_CH_COUNT];
 extern ChannelRuntime_t g_RuntimeData[CALIB_CH_COUNT];
 extern wiz_NetInfo g_net_info_cache;
 extern volatile bool g_apply_net_change_flag;
+extern InternalCalibPoint_t g_InternalCalib[CALIB_CH_COUNT]; // 引用外部
 bool g_is_streaming_mode = false;
 USHORT usRegHoldingBuf[REG_HOLDING_NREGS];
+
+// 内部校准解锁标志
+static bool s_internal_calib_unlocked = false;
+// 定义密码
+#define INT_CALIB_PASSWORD 0x6688
 
 void User_Modbus_Register_Init(void)
 {
@@ -92,7 +98,7 @@ eMBErrorCode eMBRegHoldingCB(UCHAR *pucRegBuffer, USHORT usAddress, USHORT usNRe
     eMBErrorCode eStatus = MB_ENOERR;
     int iRegIndex;
     bool is_net_changed = false;
-    
+    bool is_int_calib_changed = false;
     // 临时变量：用于保存可能被修改的端口号
     // 默认取当前运行的端口，防止用户只改IP不改端口时端口变成0
     static uint16_t temp_port_for_save = 0; 
@@ -207,6 +213,71 @@ eMBErrorCode eMBRegHoldingCB(UCHAR *pucRegBuffer, USHORT usAddress, USHORT usNRe
                     pucRegBuffer += 2;
                 }
             }
+            else if (iRegIndex == REG_INT_CAL_PASSWORD)
+            {
+                if (eMode == MB_REG_READ)
+                {
+                    // 读的时候返回当前锁定状态：0=锁定，1=已解锁
+                    USHORT val = s_internal_calib_unlocked ? 1 : 0;
+                    *pucRegBuffer++ = (UCHAR)(val >> 8);
+                    *pucRegBuffer++ = (UCHAR)(val & 0xFF);
+                }
+                else
+                {
+                    USHORT val = (USHORT)pucRegBuffer[0] << 8 | (USHORT)pucRegBuffer[1];
+                    // 校验密码
+                    if (val == INT_CALIB_PASSWORD) {
+                        s_internal_calib_unlocked = true;
+                    } else {
+                        // 写入其他值则重新上锁
+                        s_internal_calib_unlocked = false;
+                    }
+                    pucRegBuffer += 2;
+                }
+            }
+            // === 新增：内部校准数据区 (1001 - 1072) ===
+            else if (iRegIndex >= REG_INT_CAL_START && iRegIndex < (REG_INT_CAL_START + REG_INT_CAL_LEN))
+            {
+                int offset = iRegIndex - REG_INT_CAL_START; // 0 ~ 71
+                // 结构：12通道 * 3点 * 2寄存器
+                // 每个通道占 6 个寄存器
+                int ch_idx = offset / 6;
+                int inner_offset = offset % 6; 
+                int point_idx = inner_offset / 2; // 0, 1, 2
+                bool is_high = (inner_offset % 2 == 0); // 偶数是高位
+
+                if (eMode == MB_REG_READ)
+                {
+                    int32_t val32 = g_InternalCalib[ch_idx].point_raw[point_idx];
+                    USHORT val16;
+                    
+                    if (is_high) val16 = (USHORT)((val32 >> 16) & 0xFFFF);
+                    else         val16 = (USHORT)(val32 & 0xFFFF);
+
+                    *pucRegBuffer++ = (UCHAR)(val16 >> 8);
+                    *pucRegBuffer++ = (UCHAR)(val16 & 0xFF);
+                }
+                else // WRITE
+                {
+                    // 只有解锁状态下才允许写入
+                    if (s_internal_calib_unlocked)
+                    {
+                        USHORT val16 = (USHORT)pucRegBuffer[0] << 8 | (USHORT)pucRegBuffer[1];
+                        int32_t *pTarget = &g_InternalCalib[ch_idx].point_raw[point_idx];
+                        
+                        if (is_high) {
+                            *pTarget &= 0x0000FFFF;
+                            *pTarget |= ((int32_t)val16 << 16);
+                        } else {
+                            *pTarget &= 0xFFFF0000;
+                            *pTarget |= (uint16_t)val16;
+                        }
+                        is_int_calib_changed = true;
+                    }
+                    // 即使锁定了，也要移动指针跳过数据
+                    pucRegBuffer += 2;
+                }
+            }
             else
             {
                 // 空闲区域
@@ -228,6 +299,14 @@ eMBErrorCode eMBRegHoldingCB(UCHAR *pucRegBuffer, USHORT usAddress, USHORT usNRe
             
             // 2. 触发 FreeRTOS 任务中的热重启逻辑
             g_apply_net_change_flag = true;
+        }
+        // === 新增：内部校准保存逻辑 ===
+        if (is_int_calib_changed)
+        {
+            // 数据已更新到 g_InternalCalib RAM 中，调用保存函数写入 EEPROM
+            Calib_SaveInternal();
+            // 保存后可以自动上锁，或者保持解锁直到重启/显式上锁，这里选择自动上锁增加安全性
+            // s_internal_calib_unlocked = false; 
         }
     }
     else

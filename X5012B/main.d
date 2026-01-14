@@ -34,7 +34,6 @@ x5012b\main.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 x5012b\main.o: ../Core/Inc/spi.h
 x5012b\main.o: ../Core/Inc/tim.h
 x5012b\main.o: ../Core/Inc/gpio.h
-x5012b\main.o: ./Common/Com_Util.h
 x5012b\main.o: ./Application/App_FreeRTOS.h
 x5012b\main.o: ./freeRTOS/include/FreeRTOS.h
 x5012b\main.o: ./freeRTOS/FreeRTOSConfig.h
@@ -75,3 +74,6 @@ x5012b\main.o: ./freeRTOS/include/semphr.h
 x5012b\main.o: ./Interface/freeModbus/include/mbutils.h
 x5012b\main.o: ./Application/App_FreeRTOS.h
 x5012b\main.o: ./Application/App_Calib.h
+x5012b\main.o: .\BSP\inc\bsp.h
+x5012b\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+x5012b\main.o: .\BSP\inc\bsp_cs553x.h

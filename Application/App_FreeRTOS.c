@@ -32,6 +32,7 @@ extern void MBTCP_PortResetRx(void);
 void App_freeRTOS_Start(void)
 {
 
+    BSP_Init();
     Int_EEPROM_Init();
     Calib_Init();
 
@@ -290,19 +291,20 @@ void Task_Network_Core(void *param)
         }
     }
 }
+
 void Task_ADC_Verify(void *param)
 {
-    // 1. 硬件初始化
+    // 1. 硬件初始化 (如果需要)
     vTaskDelay(pdMS_TO_TICKS(500));
-    CS5530_Init_All();
-    CS5530_Start_Continuous();
 
-    uint8_t ready_flags[12];
 
-    // 局部临时包，用于拼装数据
+    // 局部变量
+    int32_t raw_val = 0;     
+    int32_t ready_flags[12]; 
+    bool is_valid = false;
+
     ModbusFakePacket_t temp_packet;
 
-    // === 预填充固定头部 ===
     temp_packet.trans_id = 0x0000;
     temp_packet.proto_id = 0x0000;
     temp_packet.length = 0x3300;
@@ -317,15 +319,20 @@ void Task_ADC_Verify(void *param)
         // 1. 始终读取硬件，维持滤波器
         for (int i = 0; i < 12; i++)
         {
-            // 读取绝对原始码
-            int32_t raw = CS5530_Read_Data(i, &ready_flags[i]);
-            
-            if (ready_flags[i] == 1) {
-                Calib_Process(i, raw);
+
+            is_valid = ADC_Sample((ADC_DevEnum)i, &raw_val);
+
+            ready_flags[i] = is_valid ? 1 : 0;
+
+            if (is_valid) 
+            {
+
+                Calib_Process(i, raw_val);
             }
 
             if (g_is_streaming_mode)
             {
+                // 获取校准后的相对值
                 int32_t val_to_send = g_RuntimeData[i].rel_raw;
                 
                 int base = i * 4;
@@ -345,8 +352,7 @@ void Task_ADC_Verify(void *param)
             UNLOCK_DATA();
         }
 
-        // 800Hz 周期控制
+        // 800Hz 周期控制 (1.25ms)
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(1));
     }
 }
-  

@@ -253,7 +253,7 @@ void EEPROM_Wait_WriteCycle(void)
 // 跨页安全写入函数
 void Int_EEPROM_WriteSafe(uint16_t WriteAddr, uint8_t *pBuffer, uint16_t NumByteToWrite)
 {
-    uint8_t NumOfPage = 0, NumOfSingle = 0, Addr = 0, count = 0, temp = 0;
+    uint8_t NumOfPage = 0, NumOfSingle = 0, Addr = 0, count = 0;
 
     // 计算当前页还剩多少字节可以写
     // 例如：地址是 0x0102，页大小32，则 (0x0102 % 32) = 2，还剩 30 字节

@@ -59,7 +59,6 @@ x5012b\app_freertos.o: ./Interface/ETH/wizchip_conf.h
 x5012b\app_freertos.o: ./Common/app_data.h
 x5012b\app_freertos.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 x5012b\app_freertos.o: ./freeRTOS/include/queue.h
-x5012b\app_freertos.o: ./Common/Com_Util.h
 x5012b\app_freertos.o: ./Interface/Int_EEPROM.h
 x5012b\app_freertos.o: ./Driver/Dri_I2C.h
 x5012b\app_freertos.o: ./Common/net_config.h
@@ -73,3 +72,6 @@ x5012b\app_freertos.o: ./freeRTOS/include/semphr.h
 x5012b\app_freertos.o: ./Interface/freeModbus/include/mbutils.h
 x5012b\app_freertos.o: Application\App_FreeRTOS.h
 x5012b\app_freertos.o: Application\App_Calib.h
+x5012b\app_freertos.o: .\BSP\inc\bsp.h
+x5012b\app_freertos.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+x5012b\app_freertos.o: .\BSP\inc\bsp_cs553x.h
